@@ -2,6 +2,7 @@ package main
 
 import (
 	"acm-portal/database"
+	"acm-portal/routers"
 	"log"
 	"os"
 
@@ -14,7 +15,8 @@ func main() {
 		database.RunMigrations(database.DB)
 	}
 	app := fiber.New()
-	// routers.GetMembersRouter(app)
+	routers.GetMembersRouter(app)
+	routers.ExportCSVRouter(app)
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendString("Hello, Fiber + GORM!")
 	})

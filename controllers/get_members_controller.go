@@ -39,46 +39,13 @@ func GetMembers(c *fiber.Ctx) error {
     query := tx.Model(&models.User{})
 
     if body.Gender != nil {
-        query = query.Where("gender = ?", *body.Gender)
-    }
-    if body.Name != nil {
-        query = query.Where("name ILIKE ?", "%"+*body.Name+"%")
-    }
-    if body.Email != nil {
-        query = query.Where("email ILIKE ?", "%"+*body.Email+"%")
-    }
-    if body.Phone != nil {
-        query = query.Where("phone LIKE ?", "%"+*body.Phone+"%")
-    }
-    if body.Bio != nil {
-        query = query.Where("bio ILIKE ?", "%"+*body.Bio+"%")
-    }
-    if body.LinkedIn != nil {
-        query = query.Where("linked_in ILIKE ?", "%"+*body.LinkedIn+"%")
-    }
-    if body.GitHub != nil {
-        query = query.Where("git_hub ILIKE ?", "%"+*body.GitHub+"%")
-    }
-    if body.Twitter != nil {
-        query = query.Where("twitter ILIKE ?", "%"+*body.Twitter+"%")
-    }
-    if body.Instagram != nil {
-        query = query.Where("instagram ILIKE ?", "%"+*body.Instagram+"%")
+        query = query.Where("gender = ?", string(*body.Gender))
     }
     if body.JobTitle != nil {
         query = query.Where("job_title ILIKE ?", "%"+*body.JobTitle+"%")
     }
     if body.Company != nil {
         query = query.Where("company ILIKE ?", "%"+*body.Company+"%")
-    }
-    if body.Website != nil {
-        query = query.Where("website ILIKE ?", "%"+*body.Website+"%")
-    }
-    if body.ProfilePictureURL != nil {
-        query = query.Where("profile_picture_url ILIKE ?", "%"+*body.ProfilePictureURL+"%")
-    }
-    if body.TheSentence != nil {
-        query = query.Where("the_sentence ILIKE ?", "%"+*body.TheSentence+"%")
     }
     if body.CreatedAfter != nil {
         if parsed, err := time.Parse(time.RFC3339, *body.CreatedAfter); err == nil {
@@ -90,6 +57,7 @@ func GetMembers(c *fiber.Ctx) error {
             query = query.Where("updated_at >= ?", parsed)
         }
     }
+    
 
     page := 1
     pageSize := 10 
