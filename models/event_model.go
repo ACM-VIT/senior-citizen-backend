@@ -13,11 +13,11 @@ type Event struct {
 	Venue             string     `gorm:"type:varchar(255)" json:"venue"`
 	EventType         EventType  `gorm:"type:varchar(20)" json:"event_type"`
 	Date              time.Time  `gorm:"type:timestamp" json:"date"`
-	StartTime         time.Time  `gorm:"type:timestamp" json:"start_time"`
+	StartTime         *time.Time  `gorm:"type:timestamp" json:"start_time,omitempty"`
 	EndTime           *time.Time `gorm:"type:timestamp" json:"end_time,omitempty"`
 	NumberOfAttendees uint       `json:"number_of_attendees"`
 	NumberOfWinners   uint       `json:"number_of_winners"`
-	HasSponsors       bool       `gorm:"default:false" json:"has_sponsors"`
+	// HasSponsors       bool       `gorm:"default:false" json:"has_sponsors"`
 	Sponsors          []Sponsor  `gorm:"many2many:event_sponsors;" json:"sponsors,omitempty"`
 	Winners           []Winner   `gorm:"foreignKey:EventID" json:"winners,omitempty"`
 }
