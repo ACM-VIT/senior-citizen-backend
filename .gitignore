@@ -1,0 +1,29 @@
+# Environment files
+.env
+.env.*
+
+# Seed files or folder
+seed/
+
+# OS / Editor-specific
+.DS_Store
+*.swp
+*.swo
+
+# IDEs
+.vscode/
+.idea/
+
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go build output
+/bin/
+/build/
+/dist/

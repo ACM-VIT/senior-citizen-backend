@@ -17,9 +17,8 @@ type Event struct {
 	EndTime           *time.Time `gorm:"type:timestamp" json:"end_time,omitempty"`
 	NumberOfAttendees uint       `json:"number_of_attendees"`
 	NumberOfWinners   uint       `json:"number_of_winners"`
-	// HasSponsors       bool       `gorm:"default:false" json:"has_sponsors"`
 	Sponsors          []Sponsor  `gorm:"many2many:event_sponsors;" json:"sponsors,omitempty"`
-	Winners           []Winner   `gorm:"foreignKey:EventID" json:"winners,omitempty"`
+	Winners           []Winner   `gorm:"foreignKey:ParticipationID" json:"winners,omitempty"`
 }
 
 type EventType string
