@@ -2,106 +2,91 @@ package controllers
 
 import (
 	"acm-portal/database"
+	"acm-portal/helpers"
 	"acm-portal/models"
 	requestschemas "acm-portal/schemas/request_schemas"
 	responseschemas "acm-portal/schemas/response_schemas"
 	"log"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func GetMembers(c *fiber.Ctx) error {
-    // adminAny := c.Locals("admin")
-    // if adminAny == nil {
-    //     return &fiber.Error{Code: 401, Message: "Unauthorized access"}
-    // }
-    // admin, ok := adminAny.(models.Admin)
-    // if !ok {
-    //     return &fiber.Error{Code: 500, Message: "Admin context invalid"}
-    // }
-    // log.Printf("[Admin: %s] Accessed member list\n", admin.UserID)
+	var body requestschemas.GetMembersRequest
+	if err := c.QueryParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid query parameters provided. Please check your request format.")
+	}
 
-    var body requestschemas.GetMembersRequest
-    if err := c.QueryParser(&body); err != nil {
-        return &fiber.Error{Code: 400, Message: "Invalid query parameters"}
-    }
+	tx := database.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Transaction Failed: Recovered from panic:", r)
+			tx.Rollback()
+		}
+	}()
 
-    tx := database.DB.Begin()
-    defer func() {
-        if r := recover(); r != nil {
-            log.Println("Recovered from panic:", r)
-            tx.Rollback()
-        }
-    }()
+	query := tx.Model(&models.Membership{})
 
-    var users []models.User
-    query := tx.Model(&models.User{})
+	if body.Role != nil {
+		query = query.Where("role = ?", *body.Role)
+	}
 
-    if body.Gender != nil {
-        query = query.Where("gender = ?", string(*body.Gender))
-    }
-    if body.JobTitle != nil {
-        query = query.Where("job_title ILIKE ?", "%"+*body.JobTitle+"%")
-    }
-    if body.Company != nil {
-        query = query.Where("company ILIKE ?", "%"+*body.Company+"%")
-    }
-    if body.CreatedAfter != nil {
-        if parsed, err := time.Parse(time.RFC3339, *body.CreatedAfter); err == nil {
-            query = query.Where("created_at >= ?", parsed)
-        }
-    }
-    if body.UpdatedAfter != nil {
-        if parsed, err := time.Parse(time.RFC3339, *body.UpdatedAfter); err == nil {
-            query = query.Where("updated_at >= ?", parsed)
-        }
-    }
-    
+	if body.Position != nil {
+		query = query.Where("position = ?", *body.Position)
+	}
 
-    page := 1
-    pageSize := 10 
-    if body.Page != nil && *body.Page > 0 {
-        page = *body.Page
-    }
-    if body.PageSize != nil && *body.PageSize > 0 {
-        pageSize = *body.PageSize
-    }
-    offset := (page - 1) * pageSize
+	if body.Page == nil || *body.Page < 1 {
+		*body.Page = 1
+	}
+	if body.PageSize == nil || *body.PageSize < 1 {
+		*body.PageSize = 10
+	}
 
-    var total int64
-    if err := query.Count(&total).Error; err != nil {
-        tx.Rollback()
-        log.Println("Count error:", err)
-        return &fiber.Error{Code: 500, Message: "Failed to count members"}
-    }
-    
-    query = query.Offset(offset).Limit(pageSize)
-    if err := query.Find(&users).Error; err != nil {
-        tx.Rollback()
-        log.Println("Error fetching members:", err)
-        return &fiber.Error{Code: 500, Message: "Failed to retrieve members"}
+	offset, totalPages := helpers.CalculatePagination(*body.Page, *body.PageSize, 0)
+	query = query.Offset(offset).Limit(*body.PageSize)
+
+
+    var memberships []models.Membership
+	if err := tx.Debug().Model(&models.Membership{}).
+    Preload("User").Preload("Tenure").
+    Find(&memberships).Error; err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Unable to fetch membership records.")
     }
 
-    tx.Commit()
+	if len(memberships) == 0 {
+		tx.Rollback()
+		return fiber.NewError(fiber.StatusNotFound, "No members found matching the criteria.")
+	}
 
-    var res []responseschemas.GetMembersResponse
-    for _, u := range users {
-        res = append(res, responseschemas.GetMembersResponse{
-            ID:                u.ID,
-            Name:              u.Name,
-            Email:             u.Email,
-            Phone:             u.Phone,
-            Gender:            u.Gender,
-            ProfilePictureURL: u.ProfilePictureURL,
-        })
-    }
-    totalPages := int((total + int64(pageSize) - 1) / int64(pageSize))
-    return c.JSON(responseschemas.PaginatedMembersResponse{
-        Data:       res,
-        Total:      total,
-        Page:       page,
-        PageSize:   pageSize,
-        TotalPages: totalPages,
-    })
+	var totalCount int64
+	if err := tx.Model(&models.Membership{}).Count(&totalCount).Error; err != nil {
+		tx.Rollback()
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to count total Membership records. Please try again later.")
+	}	
+
+	_, totalPages = helpers.CalculatePagination(*body.Page, *body.PageSize, totalCount)
+
+	var responseData []responseschemas.GetMembersResponse
+	for _, membership := range memberships {
+		responseData = append(responseData, responseschemas.GetMembersResponse{
+			ID:        membership.ID,
+			UserID:    membership.UserID,
+			User:      membership.User,
+			TenureID:  membership.TenureID,
+			Tenure:    membership.Tenure,
+			Role:      membership.Role,
+			Position:  membership.Position,
+		})
+	}
+
+	response := responseschemas.PaginatedMembersResponse{
+		Data:       responseData,
+		Total:      totalCount,
+		Page:       *body.Page,
+		PageSize:   *body.PageSize,
+		TotalPages: totalPages,
+	}
+
+	tx.Commit()
+	return c.JSON(fiber.Map{"status":  "success","message": "Members fetched successfully","data": response,})
 }

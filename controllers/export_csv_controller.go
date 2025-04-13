@@ -22,7 +22,7 @@ func ExportMembersCSV(c *fiber.Ctx) error {
 	tx := database.DB.Begin()
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("Recovered from panic:", r)
+			log.Println("Transaction Failed: Recovered from panic:", r)
 			tx.Rollback()
 		}
 	}()
@@ -30,28 +30,36 @@ func ExportMembersCSV(c *fiber.Ctx) error {
 	var users []models.User
 	if err := tx.Model(&models.User{}).Find(&users).Error; err != nil {
 		tx.Rollback()
-		log.Println("Error fetching members:", err)
-		return &fiber.Error{Code: 500, Message: "Failed to retrieve members"}
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve members for CSV export.")
 	}
+
+	if len(users) == 0 {
+		tx.Commit()
+		return fiber.NewError(fiber.StatusNotFound, "No members found to export.")
+	}
+
 	tx.Commit()
 
 	var buf bytes.Buffer
-	buf.Write([]byte{0xEF, 0xBB, 0xBF}) 
+	buf.Write([]byte{0xEF, 0xBB, 0xBF})
 	writer := csv.NewWriter(&buf)
 
-	writer.Write([]string{"Name", "Email"})
+	if err := writer.Write([]string{"Name", "Email"}); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to write CSV header.")
+	}
 
 	for _, u := range users {
-		writer.Write([]string{
+		if err := writer.Write([]string{
 			sanitize(u.Name),
 			sanitize(u.Email),
-		})
+		}); err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "Failed to write CSV data.")
+		}
 	}
-	writer.Flush()
 
+	writer.Flush()
 	if err := writer.Error(); err != nil {
-		log.Println("Error writing CSV:", err)
-		return &fiber.Error{Code: 500, Message: "Failed to generate CSV"}
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to generate CSV.")
 	}
 
 	c.Set("Content-Type", "text/csv; charset=utf-8")
