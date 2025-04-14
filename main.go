@@ -3,6 +3,7 @@ package main
 import (
 	"acm-portal/database"
 	"acm-portal/routers"
+
 	"log"
 	"os"
 
@@ -14,10 +15,10 @@ func main() {
 	if os.Getenv("SHOULD_MIGRATE") == "true" {
 		database.RunMigrations(database.DB)
 	}
-	//if os.Getenv("SHOULD_SEED") == "true" {
-	//	seed.Seed()
-	//}
-	app := fiber.New()
+	// seed.Seed()
+	app := fiber.New(fiber.Config{
+		// ErrorHandler: middleware.ErrorHandler,
+	})
 	routers.GetMembersRouter(app)
 	routers.ExportCSVRouter(app)
 	routers.SearchMembership(app)
