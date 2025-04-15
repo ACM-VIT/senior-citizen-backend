@@ -3,9 +3,9 @@ package models
 type User struct {
 	Base
 	Name              string `gorm:"type:varchar(100);not null;" json:"name"`
-	Email             string `gorm:"type:varchar(100);not null;uniqueIndex" json:"email"`
+	Email             string `gorm:"type:varchar(100);not null;uniqueIndex:idx_users_email" json:"email"`
 	ProfilePictureURL string `gorm:"type:text" json:"profile_picture_url"`
-	Phone             string `gorm:"uniqueIndex;type:varchar(20);not null" json:"phone"`
+	Phone             string `gorm:"uniqueIndex:idx_users_phone;type:varchar(20);not null" json:"phone"`
 	Gender            Gender `gorm:"type:text;not null" json:"gender"`
 	Bio               string `gorm:"type:text" json:"bio,omitempty"`
 	TheSentence       string `gorm:"type:text" json:"the_sentence,omitempty"`

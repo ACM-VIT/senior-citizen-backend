@@ -1,7 +1,9 @@
 package database
 
 import (
+	"fmt"
 	"log"
+	"time"
 
 	"acm-portal/initializers"
 
@@ -18,7 +20,9 @@ func ConnectToDB() {
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database: ", err)
-	} else {
-		log.Println("Connected to database")
-	}
+	} 
+	var now time.Time
+	DB.Raw("SELECT NOW()").Scan(&now)
+
+	fmt.Println(now)
 }

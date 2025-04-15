@@ -8,6 +8,7 @@ import (
 
 	"acm-portal/database"
 	"acm-portal/routers"
+	"acm-portal/seed"
 )
 
 func initApp() {
@@ -15,7 +16,7 @@ func initApp() {
 	if os.Getenv("SHOULD_MIGRATE") == "true" {
 		database.RunMigrations(database.DB)
 	}
-	// seed.Seed()
+	seed.Seed()
 }
 
 func main() {
@@ -36,6 +37,7 @@ func setupRoutes(app *fiber.App) {
 
 	routers.GetMembersRouter(app)
 	routers.ExportCSVRouter(app)
+	seed.GetAllUsersRouter(app)
 	routers.UpdateInformationRouter(app)
 	routers.SearchMembershipRouter(app)
 }
