@@ -27,23 +27,23 @@ func GetMembers(c *fiber.Ctx) error {
 
 	query := tx.Model(&models.Membership{})
 
-	if body.Role != nil {
-		query = query.Where("role = ?", *body.Role)
+	if body.Role != "" {
+		query = query.Where("role = ?", body.Role)
 	}
 
-	if body.Position != nil {
-		query = query.Where("position = ?", *body.Position)
+	if body.Position != "" {
+		query = query.Where("position = ?", body.Position)
 	}
 
-	if body.Page == nil || *body.Page < 1 {
-		*body.Page = 1
+	if body.Page == 0 || body.Page < 1 {
+		body.Page = 1
 	}
-	if body.PageSize == nil || *body.PageSize < 1 {
-		*body.PageSize = 10
+	if body.PageSize == 0 || body.PageSize < 1 {
+		body.PageSize = 10
 	}
 
-	offset, totalPages := helpers.CalculatePagination(*body.Page, *body.PageSize, 0)
-	query = query.Offset(offset).Limit(*body.PageSize)
+	offset, totalPages := helpers.CalculatePagination(body.Page, body.PageSize, 0)
+	query = query.Offset(offset).Limit(body.PageSize)
 
 
     var memberships []models.Membership
@@ -64,7 +64,7 @@ func GetMembers(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to count total Membership records. Please try again later.")
 	}	
 
-	_, totalPages = helpers.CalculatePagination(*body.Page, *body.PageSize, totalCount)
+	_, totalPages = helpers.CalculatePagination(body.Page, body.PageSize, totalCount)
 
 	var responseData []responseschemas.GetMembersResponse
 	for _, membership := range memberships {
@@ -82,8 +82,8 @@ func GetMembers(c *fiber.Ctx) error {
 	response := responseschemas.PaginatedMembersResponse{
 		Data:       responseData,
 		Total:      totalCount,
-		Page:       *body.Page,
-		PageSize:   *body.PageSize,
+		Page:       body.Page,
+		PageSize:   body.PageSize,
 		TotalPages: totalPages,
 	}
 
