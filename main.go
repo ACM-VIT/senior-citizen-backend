@@ -16,7 +16,7 @@ func initApp() {
 	if os.Getenv("SHOULD_MIGRATE") == "true" {
 		database.RunMigrations(database.DB)
 	}
-	seed.Seed()
+	// seed.Seed()
 }
 
 func main() {
