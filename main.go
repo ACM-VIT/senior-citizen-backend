@@ -1,29 +1,41 @@
 package main
 
 import (
-	"acm-portal/database"
-	"acm-portal/routers"
-
 	"log"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
+
+	"acm-portal/database"
+	"acm-portal/routers"
 )
 
-func main() {
+func initApp() {
 	database.ConnectToDB()
 	if os.Getenv("SHOULD_MIGRATE") == "true" {
 		database.RunMigrations(database.DB)
 	}
 	// seed.Seed()
-	app := fiber.New(fiber.Config{
-		// ErrorHandler: middleware.ErrorHandler,
-	})
-	routers.GetMembersRouter(app)
-	routers.ExportCSVRouter(app)
-	routers.SearchMembership(app)
+}
+
+func main() {
+	initApp()
+
+	app := fiber.New()
+
+	setupRoutes(app)
+
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendString("Hello, Fiber + GORM!")
 	})
+
 	log.Fatal(app.Listen(":3000"))
+}
+
+func setupRoutes(app *fiber.App) {
+
+	routers.GetMembersRouter(app)
+	routers.ExportCSVRouter(app)
+	routers.UpdateInformationRouter(app)
+	routers.SearchMembershipRouter(app)
 }
