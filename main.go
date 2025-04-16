@@ -22,6 +22,7 @@ func main() {
 	routers.GetMembersRouter(app)
 	routers.ExportCSVRouter(app)
 	routers.SearchMembership(app)
+	routers.GetMembership(app)
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendString("Hello, Fiber + GORM!")
 	})
