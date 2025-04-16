@@ -9,7 +9,7 @@ type GetMembersResponse struct {
     TenureID  string          `json:"tenure_id"`  
     Tenure    models.Tenure  `json:"tenure"`      
     Role      models.Role     `json:"role"`        
-    Position  *string         `json:"position,omitempty"`
+    Position  string         `json:"position,omitempty"`
 }
 
 type PaginatedMembersResponse struct {

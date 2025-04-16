@@ -3,8 +3,8 @@ package models
 type Sponsor struct {
 	Base
 	Name    string  `gorm:"type:varchar(255);not null" json:"name"`
-	LogoURL *string `gorm:"type:text" json:"logo_url,omitempty"`
-	Website *string `gorm:"type:text" json:"website,omitempty"`
-	Contact *string `gorm:"type:varchar(50)" json:"contact,omitempty"`
+	LogoURL string  `gorm:"type:text" json:"logo_url,omitempty"`
+	Website string  `gorm:"type:text" json:"website,omitempty"`
+	Contact string  `gorm:"type:varchar(50)" json:"contact,omitempty"`
 	Events  []Event `gorm:"many2many:event_sponsors;" json:"-"`
 }
