@@ -39,7 +39,11 @@ func UpdateInformation(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to update user information.")
 	}
 	
-	tx.Commit()
+	if err := tx.Commit().Error; err != nil {
+		log.Println("Transaction commit failed:", err)
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to save user info. Please try again.")
+	}
+	
 	
 	return c.JSON(fiber.Map{"status":  "success","message": "Information updated successfully","data":user})
 }
