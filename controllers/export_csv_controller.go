@@ -5,7 +5,6 @@ import (
 	"acm-portal/models"
 	"bytes"
 	"encoding/csv"
-	"log"
 	"unicode/utf8"
 
 	"github.com/gofiber/fiber/v2"
@@ -19,29 +18,17 @@ func sanitize(input string) string {
 }
 
 func ExportMembersCSV(c *fiber.Ctx) error {
-	tx := database.DB.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			log.Println("Transaction Failed: Recovered from panic:", r)
-			tx.Rollback()
-		}
-	}()
-
 	var users []models.User
-	if err := tx.Model(&models.User{}).Find(&users).Error; err != nil {
-		tx.Rollback()
+	if err := database.DB.Find(&users).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve members for CSV export.")
 	}
 
 	if len(users) == 0 {
-		tx.Commit()
 		return fiber.NewError(fiber.StatusNotFound, "No members found to export.")
 	}
 
-	tx.Commit()
-
 	var buf bytes.Buffer
-	buf.Write([]byte{0xEF, 0xBB, 0xBF})
+	buf.Write([]byte{0xEF, 0xBB, 0xBF}) 
 	writer := csv.NewWriter(&buf)
 
 	if err := writer.Write([]string{"Name", "Email"}); err != nil {
