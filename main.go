@@ -16,7 +16,7 @@ func initApp() {
 	if os.Getenv("SHOULD_MIGRATE") == "true" {
 		database.RunMigrations(database.DB)
 	}
-	test.Test()
+	// test.Test()
 }
 
 func main() {
@@ -40,5 +40,5 @@ func setupRoutes(app *fiber.App) {
 	test.GetAllUsersRouter(app)
 	routers.UpdateInformationRouter(app)
 	routers.SearchMembershipRouter(app)
-	routers.UpsertMembershipRouter(app)
+	routers.UpdateIndividualRouter(app)
 }
