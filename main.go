@@ -9,6 +9,7 @@ import (
 	"acm-portal/controllers"
 	"acm-portal/database"
 	"acm-portal/routers"
+	"acm-portal/test"
 )
 
 func initApp() {
@@ -17,7 +18,7 @@ func initApp() {
 		database.RunMigrations(database.DB)
 		database.SetupPgTrgm(database.DB)
 	}
-	// seed.Seed()
+	// test.Test()
 }
 
 func main() {
@@ -38,9 +39,10 @@ func setupRoutes(app *fiber.App) {
 
 	routers.GetMembersRouter(app)
 	routers.ExportCSVRouter(app)
-	//seed.GetAllUsersRouter(app)
+	test.GetAllUsersRouter(app)
 	routers.UpdateInformationRouter(app)
 	routers.SearchMembershipRouter(app)
+	routers.UpdateIndividualRouter(app)
 	userCSVController := controllers.NewUserCSVController()
 	app.Post("/users/upload-csv", userCSVController.UploadUsersCSV)
 
