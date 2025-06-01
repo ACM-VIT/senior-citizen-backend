@@ -39,7 +39,6 @@ type UserCSVRecord struct {
 }
 
 func (uc *UserCSVController) UploadUsersCSV(c *fiber.Ctx) error {
-	// Get file from form data
 	file, err := c.FormFile("file")
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -47,7 +46,6 @@ func (uc *UserCSVController) UploadUsersCSV(c *fiber.Ctx) error {
 		})
 	}
 
-	// Parse CSV
 	records, err := parseUserCSV(file)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -55,10 +53,8 @@ func (uc *UserCSVController) UploadUsersCSV(c *fiber.Ctx) error {
 		})
 	}
 
-	// Handle CSV data
 	successCount, errorCount, errors := handleUserCSVUpload(database.DB, records)
 
-	// Prepare response
 	response := fiber.Map{
 		"success_count": successCount,
 		"error_count":   errorCount,
@@ -75,7 +71,6 @@ func (uc *UserCSVController) UploadUsersCSV(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
-// Helper functions moved into controller
 func parseUserCSV(file *multipart.FileHeader) ([]UserCSVRecord, error) {
 	f, err := file.Open()
 	if err != nil {
@@ -86,7 +81,6 @@ func parseUserCSV(file *multipart.FileHeader) ([]UserCSVRecord, error) {
 	reader := csv.NewReader(f)
 	records := make([]UserCSVRecord, 0)
 
-	// Read and validate header row
 	headers, err := reader.Read()
 	if err != nil {
 		return nil, err
