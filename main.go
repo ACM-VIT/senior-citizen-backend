@@ -6,15 +6,16 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"acm-portal/controllers"
 	"acm-portal/database"
 	"acm-portal/routers"
-	"acm-portal/seed"
 )
 
 func initApp() {
 	database.ConnectToDB()
 	if os.Getenv("SHOULD_MIGRATE") == "true" {
 		database.RunMigrations(database.DB)
+		database.SetupPgTrgm(database.DB)
 	}
 	// seed.Seed()
 }
@@ -37,7 +38,10 @@ func setupRoutes(app *fiber.App) {
 
 	routers.GetMembersRouter(app)
 	routers.ExportCSVRouter(app)
-	seed.GetAllUsersRouter(app)
+	//seed.GetAllUsersRouter(app)
 	routers.UpdateInformationRouter(app)
 	routers.SearchMembershipRouter(app)
+	userCSVController := controllers.NewUserCSVController()
+	app.Post("/users/upload-csv", userCSVController.UploadUsersCSV)
+
 }

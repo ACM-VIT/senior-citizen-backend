@@ -8,14 +8,24 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func SearchMembership(c *fiber.Ctx) error {
-	query := c.Query("query")
-	userID := c.Query("user_id")
-	tenureID := c.Query("tenure_id")
-	role := c.Query("role")
-	position := c.Query("position")
+type MembershipSearchRequest struct {
+	Query    string `json:"query"`
+	UserID   string `json:"user_id"`
+	TenureID string `json:"tenure_id"`
+	Role     string `json:"role"`
+	Position string `json:"position"`
+}
 
-	if query == "" && userID == "" && tenureID == "" && role == "" && position == "" {
+func SearchMembership(c *fiber.Ctx) error {
+	var body MembershipSearchRequest
+
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+
+	if body.Query == "" && body.UserID == "" && body.TenureID == "" && body.Role == "" && body.Position == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "At least one query/filter is required",
 		})
@@ -29,27 +39,23 @@ func SearchMembership(c *fiber.Ctx) error {
 		Preload("Tenure").
 		Joins("JOIN users ON users.id = memberships.user_id")
 
-	// Fuzzy + Exact search
-	if query != "" {
-		q := "%" + strings.ToLower(query) + "%"
-		dbQuery = dbQuery.Where(`
-			LOWER(users.name) LIKE ?`,
-			q,
-		)
+	// Fuzzy part
+	if body.Query != "" && len(body.Query) >= 3 {
+		dbQuery = dbQuery.Where("users.name ILIKE ?", "%"+body.Query+"%")
 	}
 
 	// Optional Filters
-	if userID != "" {
-		dbQuery = dbQuery.Where("memberships.user_id = ?", userID)
+	if body.UserID != "" {
+		dbQuery = dbQuery.Where("memberships.user_id = ?", body.UserID)
 	}
-	if tenureID != "" {
-		dbQuery = dbQuery.Where("memberships.tenure_id = ?", tenureID)
+	if body.TenureID != "" {
+		dbQuery = dbQuery.Where("memberships.tenure_id = ?", body.TenureID)
 	}
-	if role != "" {
-		dbQuery = dbQuery.Where("memberships.role = ?", role)
+	if body.Role != "" {
+		dbQuery = dbQuery.Where("memberships.role = ?", body.Role)
 	}
-	if position != "" {
-		pq := "%" + strings.ToLower(position) + "%"
+	if body.Position != "" {
+		pq := "%" + strings.ToLower(body.Position) + "%"
 		dbQuery = dbQuery.Where("LOWER(memberships.position) LIKE ?", pq)
 	}
 

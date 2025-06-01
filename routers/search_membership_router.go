@@ -8,5 +8,5 @@ import (
 
 func SearchMembershipRouter(app *fiber.App) {
 	SearchMembers := app.Group("/search/member")
-	SearchMembers.Get("/", controllers.SearchMembership)
+	SearchMembers.Post("/", controllers.SearchMembership)
 }
