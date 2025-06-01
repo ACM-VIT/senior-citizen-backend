@@ -6,7 +6,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"acm-portal/controllers"
 	"acm-portal/database"
 	"acm-portal/routers"
 	"acm-portal/test"
@@ -43,7 +42,6 @@ func setupRoutes(app *fiber.App) {
 	routers.UpdateInformationRouter(app)
 	routers.SearchMembershipRouter(app)
 	routers.UpdateIndividualRouter(app)
-	userCSVController := controllers.NewUserCSVController()
-	app.Post("/users/upload-csv", userCSVController.UploadUsersCSV)
+	routers.UploadUserCSVRouter(app)
 
 }
