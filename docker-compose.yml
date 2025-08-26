@@ -1,5 +1,3 @@
-version: "3.7"
-
 services:
   kratos:
     image: oryd/kratos:v1.1.0

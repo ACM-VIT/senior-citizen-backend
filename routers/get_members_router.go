@@ -2,12 +2,15 @@ package routers
 
 import (
 	"acm-portal/controllers"
+	"acm-portal/middleware"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func GetMembersRouter(app *fiber.App) {
 	GetMembersRouter := app.Group("/admin/members")
-	// GetMembersRouter.Use(middleware.AdminMiddleware()) 
-	GetMembersRouter.Get("/", controllers.GetMembers)
+	// GetMembersRouter.Use(middleware.AdminMiddleware())
+	GetMembersRouter.Get("/",
+		middleware.AuthMiddleware,
+		controllers.GetMembers)
 }
