@@ -39,11 +39,11 @@ func setupRoutes(app *fiber.App) {
 	test.GetAllUsersRouter(app)
 	routers.SignupRouter(app)
 	routers.GetMembersRouter(app)
+	routers.GetMembership(app)
 	routers.ExportCSVRouter(app)
 	test.GetAllUsersRouter(app)
 	routers.UpdateInformationRouter(app)
 	routers.SearchMembershipRouter(app)
-	routers.UpdateIndividualRouter(app)
 	routers.UpdateRolesRouter(app)
 
 }

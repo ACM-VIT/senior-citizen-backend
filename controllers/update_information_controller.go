@@ -19,7 +19,7 @@ func UpdateInformation(c *fiber.Ctx) error {
 	if userID == "" {
 		return fiber.NewError(fiber.StatusUnauthorized, "Unauthorized: Token invalid or expired.")
 	}
-	log.Println(userID)
+	//log.Println(userID)
 	tx := database.DB.Begin()
 	defer func() {
 		if r := recover(); r != nil {

@@ -1,5 +1,7 @@
 package controllers
 
+//this isnt working, needs to be fixed
+
 import (
 	"acm-portal/database"
 	"acm-portal/models"

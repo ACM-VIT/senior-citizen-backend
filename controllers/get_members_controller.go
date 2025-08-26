@@ -58,13 +58,13 @@ func GetMembers(c *fiber.Ctx) error {
 	var responseData []responseschemas.GetMembersResponse
 	for _, membership := range memberships {
 		responseData = append(responseData, responseschemas.GetMembersResponse{
-			ID:        membership.ID,
-			UserID:    membership.UserID,
-			User:      membership.User,
-			TenureID:  membership.TenureID,
-			Tenure:    membership.Tenure,
-			Role:      membership.Role,
-			Position:  membership.Position,
+			ID:       membership.ID,
+			UserID:   membership.UserID,
+			User:     membership.User,
+			TenureID: membership.TenureID,
+			Tenure:   membership.Tenure,
+			Role:     membership.Role,
+			Position: membership.Position,
 		})
 	}
 
