@@ -8,7 +8,7 @@ import (
 )
 
 func GetMembersRouter(app *fiber.App) {
-	GetMembersRouter := app.Group("/admin/members")
+	GetMembersRouter := app.Group("/members")
 	// GetMembersRouter.Use(middleware.AdminMiddleware())
 	GetMembersRouter.Get("/",
 		middleware.AuthMiddleware,

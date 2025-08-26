@@ -8,7 +8,7 @@ import (
 )
 
 func GetMembership(app *fiber.App) {
-	GetMembership := app.Group("/check/memberr")
+	GetMembership := app.Group("/check/member")
 	GetMembership.Get("/", middleware.AuthMiddleware,
 		controllers.GetCurrentUser)
 }

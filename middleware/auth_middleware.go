@@ -1,23 +1,15 @@
-// middleware/auth_middleware.go
 package middleware
 
 import (
-	"errors"
+	"acm-portal/helpers"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
 )
 
-type CustomClaims struct {
-	UserID string `json:"user_id"`
-	Email  string `json:"email"`
-	Admin  bool   `json:"admin"`
-	jwt.StandardClaims
-}
-
+// extractToken gets the JWT from Authorization header or cookie
 func extractToken(c *fiber.Ctx) string {
 	bearerToken := c.Get("Authorization")
 	if strings.HasPrefix(bearerToken, "Bearer ") {
@@ -26,6 +18,7 @@ func extractToken(c *fiber.Ctx) string {
 	return c.Cookies(os.Getenv("CSRF_COOKIE_NAME"))
 }
 
+// AuthMiddleware validates the JWT and sets user info in c.Locals
 func AuthMiddleware(c *fiber.Ctx) error {
 	tokenString := extractToken(c)
 	if tokenString == "" {
@@ -34,13 +27,8 @@ func AuthMiddleware(c *fiber.Ctx) error {
 		})
 	}
 
-	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("unexpected signing method")
-		}
-		return []byte(os.Getenv("COOKIE_SECRET")), nil
-	})
-
+	// Use helper to parse claims
+	claims, err := helpers.ParseJWTClaims(tokenString)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error":   "Invalid token",
@@ -48,23 +36,17 @@ func AuthMiddleware(c *fiber.Ctx) error {
 		})
 	}
 
-	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
-		if time.Now().Unix() > claims.ExpiresAt {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Token expired",
-			})
-		}
-
-		c.Locals("user", fiber.Map{
-			"id":    claims.UserID,
-			"email": claims.Email,
-			"admin": claims.Admin,
+	// Check expiration
+	if exp, ok := claims["exp"].(float64); !ok || int64(exp) < time.Now().Unix() {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Token expired",
 		})
-
-		return c.Next()
 	}
 
-	return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-		"error": "Invalid token claims",
-	})
+	// Attach user info to request context
+	c.Locals("userID", claims["ID"])
+	c.Locals("email", claims["email"])
+	c.Locals("admin", claims["admin"])
+
+	return c.Next()
 }

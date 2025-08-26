@@ -36,6 +36,8 @@ func main() {
 
 func setupRoutes(app *fiber.App) {
 
+	test.GetAllUsersRouter(app)
+	routers.SignupRouter(app)
 	routers.GetMembersRouter(app)
 	routers.ExportCSVRouter(app)
 	test.GetAllUsersRouter(app)

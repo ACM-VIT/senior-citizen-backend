@@ -29,7 +29,7 @@ func UpsertIndividual(c *fiber.Ctx) error {
 	if input.UserID != "" {
 		userID = input.UserID
 	} else {
-		userID, err = fetchOrCreateUser(input.Email, input.Name, input.Phone, input.Gender)
+		userID, err = FetchOrCreateUser(input.Email, input.Name, input.Phone, input.Gender)
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "Could not resolve user")
 		}
@@ -52,7 +52,6 @@ func UpsertIndividual(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid role provided")
 	}
 
-
 	err = helpers.ValidatePosition(input.Position)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid position provided")
@@ -74,5 +73,5 @@ func UpsertIndividual(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "Could not update individual")
 	}
 
-	return c.JSON(fiber.Map{"status":  "success","message": "Individual updated successfully","data":input})
+	return c.JSON(fiber.Map{"status": "success", "message": "Individual updated successfully", "data": input})
 }

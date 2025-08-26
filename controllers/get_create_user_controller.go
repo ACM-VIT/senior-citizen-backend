@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func fetchOrCreateUser(email, name, phone, gender string) (string, error) {
+func FetchOrCreateUser(email, name, phone, gender string) (string, error) {
 	var user models.User
 	result := database.DB.Where("email = ?", email).First(&user)
 	if result.Error == nil {
