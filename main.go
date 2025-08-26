@@ -44,6 +44,6 @@ func setupRoutes(app *fiber.App) {
 	routers.UpdateInformationRouter(app)
 	routers.SearchMembershipRouter(app)
 	routers.UpdateIndividualRouter(app)
-	routers.UploadUserCSVRouter(app)
+	routers.UpdateRolesRouter(app)
 
 }

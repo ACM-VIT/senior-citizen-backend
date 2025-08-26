@@ -1,5 +1,6 @@
 package controllers
 
+//a few changes, error handling needs to be better
 import (
 	"acm-portal/database"
 	"acm-portal/models"
