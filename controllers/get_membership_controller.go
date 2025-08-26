@@ -1,7 +1,5 @@
 package controllers
 
-//THIS ONE YET TO TEST, WILL TEST AFTER AUTH IMPLEMENTED, BASIC WITH USERID AS QUERY TOH WORKING
-
 import (
 	"acm-portal/database"
 	"acm-portal/models"
@@ -12,10 +10,8 @@ import (
 func GetCurrentUser(c *fiber.Ctx) error {
 	//from auth
 	userID := c.Locals("userID")
-	if userID == nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Unauthorized: userID not found in context",
-		})
+	if userID == "" {
+		return fiber.NewError(fiber.StatusUnauthorized, "Unauthorized: Token invalid or expired.")
 	}
 
 	var user models.User
