@@ -1,7 +1,6 @@
 serve:
   cookies:
     same_site_mode: Lax
-
 urls:
   self:
     issuer: http://127.0.0.1:4444

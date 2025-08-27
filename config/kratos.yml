@@ -1,7 +1,5 @@
 version: v1.1.0
 
-dsn: memory
-
 serve:
   public:
     base_url: http://127.0.0.1:4433
@@ -14,6 +12,8 @@ selfservice:
   default_browser_return_url: http://127.0.0.1:4455/
   allowed_return_urls:
     - http://127.0.0.1:4455
+    - http://127.0.0.1:4433/self-service
+    - http://127.0.0.1:4444/oauth2/auth
 
   methods:
     password:
