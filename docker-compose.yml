@@ -15,18 +15,20 @@ services:
     networks:
       - intranet
 
-  # kratos-migrate:
-  #   image: oryd/kratos:v1.1.0
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - DSN=${KRATOS_DSN}
-  #   command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
-  #   volumes:
-  #     - ./config:/etc/config/kratos
-  #   restart: on-failure
-  #   networks:
-  #     - intranet
+  kratos-migrate:
+    image: oryd/kratos:v1.1.0
+    env_file:
+      - .env
+    environment:
+      - DSN=postgres://kratos:secret@kratos-postgres:5432/kratos?sslmode=disable
+    command: migrate sql -e --yes -c /etc/config/kratos/kratos.yml
+    volumes:
+      - ./config:/etc/config/kratos
+    networks:
+      - intranet
+    depends_on:
+      - kratos-postgres
+    restart: on-failure
 
   hydra:
     image: oryd/hydra:v2.2.0
@@ -44,18 +46,16 @@ services:
     networks:
       - intranet
 
-  # hydra-migrate:
-  #   image: oryd/hydra:v2.2.0
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - DSN=${HYDRA_DSN}
-  #   command: migrate -c /etc/config/hydra/hydra.yml sql -e --yes
-  #   volumes:
-  #     - ./config:/etc/config/hydra
-  #   restart: on-failure
-  #   networks:
-  #     - intranet
+  hydra-migrate:
+    image: oryd/hydra:v2.2.0
+    command: migrate sql -e --yes
+    environment:
+      - DSN=${HYDRA_DSN}
+    networks:
+      - intranet
+    depends_on:
+      - hydra-postgres
+    restart: on-failure
 
   kratos-selfservice-ui-node:
     image: oryd/kratos-selfservice-ui-node:v1.1.0
@@ -90,5 +90,35 @@ services:
     networks:
       - intranet
 
+  kratos-postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: kratos
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: kratos
+    ports:
+      - "5432:5432"
+    networks:
+      - intranet
+    volumes:
+      - kratos-db:/var/lib/postgresql/data
+
+  hydra-postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: hydra
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: hydra
+    ports:
+      - "5433:5432"
+    networks:
+      - intranet
+    volumes:
+      - hydra-db:/var/lib/postgresql/data
+
 networks:
   intranet:
+    driver: bridge
+volumes:
+  kratos-db:
+  hydra-db:
