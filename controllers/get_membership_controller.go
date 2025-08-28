@@ -8,7 +8,6 @@ import (
 )
 
 func GetCurrentUser(c *fiber.Ctx) error {
-	//from auth
 	userID := c.Locals("userID")
 	if userID == "" {
 		return fiber.NewError(fiber.StatusUnauthorized, "Unauthorized: Token invalid or expired.")

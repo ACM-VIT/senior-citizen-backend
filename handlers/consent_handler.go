@@ -10,13 +10,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// Hydra endpoints (admin API)
-var hydraAdminURL = "http://127.0.0.1:4445" // Hydra admin API
-var kratosAdminURL = "http://127.0.0.1:4434" // Kratos admin API
+var hydraAdminURL = "http://127.0.0.1:4445" 
+var kratosAdminURL = "http://127.0.0.1:4434"
 
-// ConsentHandler handles Hydra consent flow
 func ConsentHandler(c *fiber.Ctx) error {
-	// 1. Get consent challenge from query
 	challenge := c.Query("consent_challenge")
 	if challenge == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -24,7 +21,6 @@ func ConsentHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	// 2. Fetch consent request from Hydra
 	resp, err := http.Get(fmt.Sprintf("%s/oauth2/auth/requests/consent?consent_challenge=%s", hydraAdminURL, url.QueryEscape(challenge)))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -44,7 +40,6 @@ func ConsentHandler(c *fiber.Ctx) error {
 
 	identityID := consentReq.Subject
 
-	// 3. Fetch identity from Kratos
 	kratosResp, err := http.Get(fmt.Sprintf("%s/admin/identities/%s", kratosAdminURL, identityID))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -63,11 +58,9 @@ func ConsentHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	// 4. Extract traits (email, admin)
 	email, _ := kratosIdentity.Traits["email"].(string)
 	admin, _ := kratosIdentity.Traits["admin"].(bool)
 
-	// 5. Accept consent and include traits as claims
 	acceptPayload := map[string]interface{}{
 		"grant_scope": []string{"openid", "profile", "email", "admin"},
 		"remember":    true,
@@ -106,6 +99,5 @@ func ConsentHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	// 6. Redirect user back to Hydra
 	return c.Redirect(acceptResult.RedirectTo, http.StatusFound)
 }

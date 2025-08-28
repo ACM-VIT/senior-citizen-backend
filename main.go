@@ -7,7 +7,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"acm-portal/database"
-	"acm-portal/handlers"
 	"acm-portal/routers"
 	"acm-portal/test"
 )
@@ -38,7 +37,6 @@ func main() {
 func setupRoutes(app *fiber.App) {
 
 	test.GetAllUsersRouter(app)
-	routers.SignupRouter(app)
 	routers.GetMembersRouter(app)
 	routers.GetMembership(app)
 	routers.ExportCSVRouter(app)
@@ -46,7 +44,7 @@ func setupRoutes(app *fiber.App) {
 	routers.UpdateInformationRouter(app)
 	routers.SearchMembershipRouter(app)
 	routers.UpdateRolesRouter(app)
-	app.Get("/callback", handlers.CallbackHandler)
-	handlers.ProtectedRouter(app)
-
+	routers.ProtectedRouter(app)
+	routers.CallbackRouter(app)
+	routers.ConsentRouter(app)
 }

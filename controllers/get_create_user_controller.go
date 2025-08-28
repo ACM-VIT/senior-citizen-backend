@@ -1,6 +1,5 @@
 package controllers
 
-//a few changes, error handling needs to be better
 import (
 	"acm-portal/database"
 	"acm-portal/models"
@@ -8,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func FetchOrCreateUser(email, name, phone, gender string) (string, error) {
+func FetchOrCreateUser(email, name string) (string, error) {
 	var user models.User
 	result := database.DB.Where("email = ?", email).First(&user)
 	if result.Error == nil {
@@ -22,8 +21,6 @@ func FetchOrCreateUser(email, name, phone, gender string) (string, error) {
 	user = models.User{
 		Email:  email,
 		Name:   name,
-		Phone:  phone,
-		Gender: models.Gender(gender),
 	}
 	err := database.DB.Create(&user).Error
 	return user.ID, err

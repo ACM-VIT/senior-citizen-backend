@@ -9,5 +9,5 @@ import (
 )
 
 func UpdateRolesRouter(app *fiber.App) {
-	app.Post("/users/update/roles", middleware.AuthMiddleware, middleware.AdminMiddleware, handlers.UpdateRolesHandler)
+	app.Post("/update/roles", middleware.AuthMiddleware, middleware.AdminMiddleware, handlers.UpdateRolesHandler)
 }
