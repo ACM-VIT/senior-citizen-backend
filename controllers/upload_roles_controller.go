@@ -4,64 +4,72 @@ import (
 	"acm-portal/database"
 	"acm-portal/helpers"
 	"acm-portal/models"
+	requestschemas "acm-portal/schemas/request_schemas"
+	responseschemas "acm-portal/schemas/response_schemas"
 	"fmt"
 
 	"gorm.io/gorm"
 )
 
-// Upsert membership assigns roles and tenures to users
-func UpdateRoles(data []struct {
-	Email    string `json:"email"`
-	Role     string `json:"role"`
-	Position string `json:"position,omitempty"`
-	Tenure   string `json:"tenure"`
-}) error {
+func UpdateRoles(data []requestschemas.UpdateRolesRequest) ([]responseschemas.UpdateRolesResponse, error) {
+	var results []responseschemas.UpdateRolesResponse
+
 	for _, d := range data {
-		// check if user exists
+		role, position, err := helpers.ValidateRole(d.Role, d.Position)
+		if err != nil {
+			return nil, err
+		}
+
 		var user models.User
 		if err := database.DB.Where("email = ?", d.Email).First(&user).Error; err != nil {
 			if err == gorm.ErrRecordNotFound {
-				return fmt.Errorf("user not found: %s", d.Email)
+				return nil, fmt.Errorf("user not found: %s", d.Email)
 			}
-			return err
+			return nil, err
 		}
 
-		// fetch or create tenure
 		tenure, err := helpers.FetchTenure(d.Tenure)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		// upsert membership
 		var membership models.Membership
 		err = database.DB.
 			Where("user_id = ? AND tenure_id = ?", user.ID, tenure.ID).
 			First(&membership).Error
 
+		status := "updated"
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
-				// create new membership
 				membership = models.Membership{
 					UserID:   user.ID,
 					TenureID: tenure.ID,
-					Role:     models.Role(d.Role),
-					Position: d.Position,
+					Role:     models.Role(role),
+					Position: position,
 				}
 				if err := database.DB.Create(&membership).Error; err != nil {
-					return err
+					return nil, err
 				}
+				status = "created"
 			} else {
-				return err
+				return nil, err
 			}
 		} else {
-			// update existing membership
-			membership.Role = models.Role(d.Role)
-			membership.Position = d.Position
+			membership.Role = models.Role(role)
+			membership.Position = position
 			if err := database.DB.Save(&membership).Error; err != nil {
-				return err
+				return nil, err
 			}
 		}
+
+		results = append(results, responseschemas.UpdateRolesResponse{
+			Email:    d.Email,
+			Role:     role,
+			Position: position,
+			Tenure:   d.Tenure,
+			Status:   status,
+		})
 	}
 
-	return nil
+	return results, nil
 }

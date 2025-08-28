@@ -8,6 +8,6 @@ import (
 )
 
 func UpdateInformationRouter(app *fiber.App) {
-	UpdateInformationRouter := app.Group("/update")
-	UpdateInformationRouter.Put("/", middleware.AuthMiddleware, controllers.UpdateInformation)
+	UpdateInformationRouter := app.Group("/update/information")
+	UpdateInformationRouter.Put("/", middleware.AuthMiddleware, controllers.UpdateProfile)
 }
