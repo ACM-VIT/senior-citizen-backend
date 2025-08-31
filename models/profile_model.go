@@ -3,6 +3,7 @@ package models
 type Profile struct {
 	Base
 	UserID            string `gorm:"uniqueIndex" json:"user_id"`
+	Name              string `gorm:"type:varchar(100);not null;" json:"name"`
 	ProfilePictureURL string `gorm:"type:text" json:"profile_picture_url"`
 	Phone             string `gorm:"uniqueIndex:idx_users_phone;type:varchar(20);not null" json:"phone"`
 	Gender            Gender `gorm:"type:text;not null" json:"gender"`

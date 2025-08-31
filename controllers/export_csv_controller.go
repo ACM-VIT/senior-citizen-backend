@@ -31,13 +31,12 @@ func ExportMembersCSV(c *fiber.Ctx) error {
 	buf.Write([]byte{0xEF, 0xBB, 0xBF}) 
 	writer := csv.NewWriter(&buf)
 
-	if err := writer.Write([]string{"Name", "Email"}); err != nil {
+	if err := writer.Write([]string{"Email"}); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to write CSV header.")
 	}
 
 	for _, u := range users {
 		if err := writer.Write([]string{
-			sanitize(u.Name),
 			sanitize(u.Email),
 		}); err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "Failed to write CSV data.")
