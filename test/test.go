@@ -18,13 +18,12 @@ func Test() {
 		}
 	}()
 
-	// Step 1: Create Users (only Name and Email)
 	users := []models.User{
-		{Name: "User 1", Email: "user1@acm.com"},
-		{Name: "User 2", Email: "user2@acm.com"},
-		{Name: "User 3", Email: "user3@acm.com"},
-		{Name: "User 4", Email: "user4@acm.com"},
-		{Name: "User 5", Email: "user5@acm.com"},
+		{Email: "user1@acm.com"},
+		{Email: "user2@acm.com"},
+		{Email: "user3@acm.com"},
+		{Email: "user4@acm.com"},
+		{Email: "user5@acm.com"},
 	}
 
 	for i := range users {
@@ -35,10 +34,10 @@ func Test() {
 		log.Printf("Inserted User: %v", users[i])
 	}
 
-	// Step 2: Create Profiles linked to Users
 	profiles := []models.Profile{
 		{
 			UserID:           users[0].ID,
+			Name:             "User 1",
 			ProfilePictureURL: "https://example.com/user1.jpg",
 			Phone:            "9876543210",
 			Gender:           models.Male,
@@ -54,6 +53,7 @@ func Test() {
 		},
 		{
 			UserID:           users[1].ID,
+			Name:             "User 2",
 			ProfilePictureURL: "https://example.com/user2.jpg",
 			Phone:            "9876543211",
 			Gender:           models.Female,
@@ -69,6 +69,7 @@ func Test() {
 		},
 		{
 			UserID:           users[2].ID,
+			Name:             "User 3",
 			ProfilePictureURL: "https://example.com/user3.jpg",
 			Phone:            "9876543212",
 			Gender:           models.Male,
@@ -84,6 +85,7 @@ func Test() {
 		},
 		{
 			UserID:           users[3].ID,
+			Name:             "User 4",
 			ProfilePictureURL: "https://example.com/user4.jpg",
 			Phone:            "9876543213",
 			Gender:           models.Female,
@@ -98,6 +100,7 @@ func Test() {
 		},
 		{
 			UserID:           users[4].ID,
+			Name:             "User 5",
 			ProfilePictureURL: "https://example.com/user5.jpg",
 			Phone:            "9876543456",
 			Gender:           models.Female,
@@ -120,7 +123,6 @@ func Test() {
 		log.Printf("Inserted Profile: %v", profile)
 	}
 
-	// Step 3: Seed Tenures
 	tenures := []models.Tenure{
 		{IsCurrentTenure: false, CurrentYear: 2025, StartDate: time.Now().AddDate(0, -1, 0), EndDate: time.Now().AddDate(0, 0, 0)},
 		{IsCurrentTenure: false, CurrentYear: 2025, StartDate: time.Now().AddDate(0, -2, 0), EndDate: time.Now().AddDate(0, -1, 0)},
@@ -137,7 +139,6 @@ func Test() {
 		log.Printf("Inserted Tenure: %v", tenures[i])
 	}
 
-	// Step 4: Seed Memberships
 	memberships := []models.Membership{
 		{UserID: users[0].ID, TenureID: tenures[0].ID, Role: models.Community, Position: ""},
 		{UserID: users[1].ID, TenureID: tenures[1].ID, Role: models.Community, Position: ""},
@@ -152,8 +153,7 @@ func Test() {
 		}
 		log.Printf("Inserted Membership: %v", membership)
 	}
-
-	// Commit transaction
+	
 	if err := tx.Commit().Error; err != nil {
 		log.Println("Error committing transaction:", err)
 		tx.Rollback()
