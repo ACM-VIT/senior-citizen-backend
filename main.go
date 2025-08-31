@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"acm-portal/database"
+	"acm-portal/handlers"
 	"acm-portal/routers"
 	"acm-portal/test"
 )
@@ -47,4 +48,5 @@ func setupRoutes(app *fiber.App) {
 	routers.ProtectedRouter(app)
 	routers.CallbackRouter(app)
 	routers.ConsentRouter(app)
+	app.Get("/decode-id-token", handlers.DecodeIDTokenHandler)
 }
