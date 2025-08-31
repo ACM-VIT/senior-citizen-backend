@@ -17,7 +17,6 @@ func main() {
 	}
 	defer db.Close()
 
-	// Fetch all tables in the public schema
 	rows, err := db.Query(`
 		SELECT tablename
 		FROM pg_tables
@@ -42,7 +41,6 @@ func main() {
 		return
 	}
 
-	// Drop all tables
 	for _, table := range tables {
 		dropStmt := fmt.Sprintf("DROP TABLE IF EXISTS %s CASCADE;", table)
 		if _, err := db.Exec(dropStmt); err != nil {

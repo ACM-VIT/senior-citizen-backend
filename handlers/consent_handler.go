@@ -59,20 +59,16 @@ func ConsentHandler(c *fiber.Ctx) error {
 	}
 
 	email, _ := kratosIdentity.Traits["email"].(string)
-	name, _ := kratosIdentity.Traits["name"].(string)
-
 	acceptPayload := map[string]interface{}{
-		"grant_scope": []string{"openid", "profile", "email", "name"},
+		"grant_scope": []string{"openid", "profile", "email"},
 		"remember":    true,
 		"remember_for": 3600,
 		"session": map[string]interface{}{
 			"id_token": map[string]interface{}{
 				"email": email,
-				"name": name,
 			},
 			"access_token": map[string]interface{}{
 				"email": email,
-				"name": name,
 			},
 		},
 	}

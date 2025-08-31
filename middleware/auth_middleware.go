@@ -70,7 +70,6 @@ func AuthMiddleware(c *fiber.Ctx) error {
 		})
 	}
 
-	// Fetch full user info from Kratos using the subject (sub)
 	kratosAdminURL := "http://senior-citizen-backend-kratos-1:4434"
 	kratosResp, err := http.Get(fmt.Sprintf("%s/admin/identities/%s", kratosAdminURL, introspection.Sub))
 	if err != nil {
@@ -99,9 +98,8 @@ func AuthMiddleware(c *fiber.Ctx) error {
 	}
 
 	email, _ := kratosIdentity.Traits["email"].(string)
-	name, _ := kratosIdentity.Traits["name"].(string)
 
-	userID, err := controllers.FetchOrCreateUser(email, name)
+	userID, err := controllers.FetchOrCreateUser(email)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "failed to sync user",
@@ -111,7 +109,6 @@ func AuthMiddleware(c *fiber.Ctx) error {
 	claims := fiber.Map{
 		"sub":      introspection.Sub,
 		"email":    email,
-		"name":     name,
 		"scope":    introspection.Scope,
 		"clientID": introspection.ClientID,
 		"exp":      introspection.Exp,
