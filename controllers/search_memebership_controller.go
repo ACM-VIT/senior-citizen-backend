@@ -1,18 +1,17 @@
 package controllers
 
-//this isnt working, needs to be fixed
-
 import (
 	"acm-portal/database"
 	"acm-portal/models"
 	"strings"
+
+	"gorm.io/gorm"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type MembershipSearchRequest struct {
 	Query    string `json:"query"`
-	UserID   string `json:"user_id"`
 	TenureID string `json:"tenure_id"`
 	Role     string `json:"role"`
 	Position string `json:"position"`
@@ -20,14 +19,13 @@ type MembershipSearchRequest struct {
 
 func SearchMembership(c *fiber.Ctx) error {
 	var body MembershipSearchRequest
-
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
 		})
 	}
 
-	if body.Query == "" && body.UserID == "" && body.TenureID == "" && body.Role == "" && body.Position == "" {
+	if body.Query == "" && body.TenureID == "" && body.Role == "" && body.Position == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "At least one query/filter is required",
 		})
@@ -36,20 +34,54 @@ func SearchMembership(c *fiber.Ctx) error {
 	var memberships []models.Membership
 	db := database.DB
 
-	dbQuery := db.
-		Preload("User").
+	dbQuery := db.Model(&models.Membership{}).
+		Preload("User.Profile").
 		Preload("Tenure").
-		Joins("JOIN users ON users.id = memberships.user_id")
+		Joins("JOIN users u ON u.id = memberships.user_id").
+		Joins("JOIN profiles p ON p.user_id = u.id")
 
-	// Fuzzy part
-	if body.Query != "" && len(body.Query) >= 3 {
-		dbQuery = dbQuery.Where("users.name ILIKE ?", "%"+body.Query+"%")
+	if body.Query != "" {
+		q := strings.ToLower(body.Query)
+		if len(q) < 3 {
+			// fallback simple search
+			dbQuery = dbQuery.Where(`
+                LOWER(u.name) ILIKE ? OR
+                LOWER(p.phone) ILIKE ? OR
+                LOWER(p.gender) ILIKE ? OR
+                LOWER(p.job_title) ILIKE ? OR
+                LOWER(p.company) ILIKE ? OR
+                LOWER(memberships.role) ILIKE ? OR
+                LOWER(memberships.position) ILIKE ?`,
+				"%"+q+"%", "%"+q+"%", "%"+q+"%",
+				"%"+q+"%", "%"+q+"%", "%"+q+"%", "%"+q+"%",
+			)
+		} else {
+			dbQuery = dbQuery.Where(`
+			(
+                u.name % ? OR
+                p.phone % ? OR
+                p.gender % ? OR
+                p.job_title % ? OR
+                p.company % ? OR
+                memberships.role % ? OR
+                memberships.position % ?
+				)`,
+				q, q, q, q, q, q, q,
+			).Order(gorm.Expr(`
+                GREATEST(
+                    similarity(u.name, ?),
+                    similarity(p.phone, ?),
+                    similarity(p.gender, ?),
+                    similarity(p.job_title, ?),
+                    similarity(p.company, ?),
+                    similarity(memberships.role, ?),
+                    similarity(memberships.position, ?)
+                ) DESC
+            `, q, q, q, q, q, q, q))
+		}
 	}
 
-	// Optional Filters
-	if body.UserID != "" {
-		dbQuery = dbQuery.Where("memberships.user_id = ?", body.UserID)
-	}
+	// Filters
 	if body.TenureID != "" {
 		dbQuery = dbQuery.Where("memberships.tenure_id = ?", body.TenureID)
 	}
@@ -57,13 +89,12 @@ func SearchMembership(c *fiber.Ctx) error {
 		dbQuery = dbQuery.Where("memberships.role = ?", body.Role)
 	}
 	if body.Position != "" {
-		pq := "%" + strings.ToLower(body.Position) + "%"
-		dbQuery = dbQuery.Where("LOWER(memberships.position) LIKE ?", pq)
+		dbQuery = dbQuery.Where("memberships.position ILIKE ?", "%"+body.Position+"%")
 	}
 
 	if err := dbQuery.Find(&memberships).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to fetch memberships",
+			"error": err.Error(),
 		})
 	}
 

@@ -10,7 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-var hydraAdminURL = "http://127.0.0.1:4445" 
+var hydraAdminURL = "http://127.0.0.1:4445"
 var kratosAdminURL = "http://127.0.0.1:4434"
 
 func ConsentHandler(c *fiber.Ctx) error {
@@ -30,7 +30,9 @@ func ConsentHandler(c *fiber.Ctx) error {
 	defer resp.Body.Close()
 
 	var consentReq struct {
-		Subject string `json:"subject"`
+		Subject                      string   `json:"subject"`
+		RequestedScope               []string `json:"requested_scope"`
+		RequestedAccessTokenAudience []string `json:"requested_access_token_audience"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&consentReq); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -62,9 +64,10 @@ func ConsentHandler(c *fiber.Ctx) error {
 	admin, _ := kratosIdentity.Traits["admin"].(bool)
 
 	acceptPayload := map[string]interface{}{
-		"grant_scope": []string{"openid", "profile", "email", "admin"},
-		"remember":    true,
-		"remember_for": 3600,
+		"grant_scope":                 consentReq.RequestedScope,
+		"grant_access_token_audience": consentReq.RequestedAccessTokenAudience,
+		"remember":                    true,
+		"remember_for":                2592000,
 		"session": map[string]interface{}{
 			"id_token": map[string]interface{}{
 				"email": email,
