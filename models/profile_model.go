@@ -4,7 +4,7 @@ type Profile struct {
 	Base
 	UserID            string `gorm:"uniqueIndex" json:"user_id"`
 	ProfilePictureURL string `gorm:"type:text" json:"profile_picture_url"`
-	Phone             string `gorm:"uniqueIndex:idx_users_phone;type:varchar(20);not null" json:"phone"`
+	Phone             string `gorm:"uniqueIndex:idx_users_phone;not null" json:"phone"`
 	Gender            Gender `gorm:"type:text;not null" json:"gender"`
 	Bio               string `gorm:"type:text" json:"bio,omitempty"`
 	TheSentence       string `gorm:"type:text" json:"the_sentence,omitempty"`
