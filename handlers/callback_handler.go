@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	jwt "github.com/golang-jwt/jwt/v5"
 )
 
 var clients = map[string]struct {
@@ -80,4 +81,28 @@ func CallbackHandler(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(tokens)
+}
+
+func DecodeIDTokenHandler(c *fiber.Ctx) error {
+	idToken := c.Query("id_token")
+	if idToken == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "missing id_token",
+		})
+	}
+
+	token, _, err := new(jwt.Parser).ParseUnverified(idToken, jwt.MapClaims{})
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid id_token",
+		})
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		return c.JSON(claims)
+	}
+
+	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		"error": "failed to parse claims",
+	})
 }
