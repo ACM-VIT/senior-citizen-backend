@@ -47,5 +47,4 @@ func setupRoutes(app *fiber.App) {
 	routers.ProtectedRouter(app)
 	routers.CallbackRouter(app)
 	routers.ConsentRouter(app)
-	routers.CreateOrUpdateProfile(app)
 }
