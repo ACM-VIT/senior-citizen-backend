@@ -119,7 +119,5 @@ func AuthMiddleware(c *fiber.Ctx) error {
 	c.Locals("claims", claims)
 	c.Locals("userID", userID)
 	c.Locals("kratosID", introspection.Sub)
-	c.Locals("admin", isAdmin)
-
 	return c.Next()
 }
