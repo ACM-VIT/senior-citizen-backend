@@ -8,6 +8,6 @@ import (
 )
 
 func GetOrCreateUserRouter(app *fiber.App) {
-	GetOrCreateUserGroup := app.Group("/user")
-	GetOrCreateUserGroup.Get("/",middleware.AuthMiddleware, handlers.GetOrCreateUserHandler)
+	GetOrCreateUserGroup := app.Group("/api/v1/user/create")
+	GetOrCreateUserGroup.Get("/", middleware.AuthMiddleware, middleware.AdminMiddleware,handlers.GetOrCreateUserHandler)
 }

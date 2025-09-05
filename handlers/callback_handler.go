@@ -34,23 +34,17 @@ var clients = map[string]struct {
 func CallbackHandler(c *fiber.Ctx) error {
 	app := c.Query("app")
 	if app == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "missing app identifier",
-		})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "missing app identifier"})
 	}
 
 	client, exists := clients[app]
 	if !exists {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "unknown app",
-		})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "unknown app"})
 	}
 
 	code := c.Query("code")
 	if code == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "missing code",
-		})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "missing code"})
 	}
 
 	data := url.Values{}
@@ -60,23 +54,15 @@ func CallbackHandler(c *fiber.Ctx) error {
 	data.Set("client_id", client.ClientID)
 	data.Set("client_secret", client.ClientSecret)
 
-	resp, err := http.Post(
-		"http://127.0.0.1:4444/oauth2/token",
-		"application/x-www-form-urlencoded",
-		strings.NewReader(data.Encode()),
-	)
+	resp, err := http.Post("http://127.0.0.1:4444/oauth2/token", "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "failed to exchange code for token",
-		})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to exchange code for token"})
 	}
 	defer resp.Body.Close()
 
 	var tokens map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&tokens); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "failed to decode token response",
-		})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to decode token response"})
 	}
 
 	return c.JSON(tokens)

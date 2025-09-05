@@ -8,7 +8,6 @@ import (
 )
 
 func GetCurrentUserRouter(app *fiber.App) {
-	GetCurrentUserGroup := app.Group("/current/user")
-	GetCurrentUserGroup.Get("/", middleware.AuthMiddleware,
-		controllers.GetCurrentUser)
+	GetCurrentUserGroup := app.Group("/api/v1/user/get")
+	GetCurrentUserGroup.Get("/", middleware.AuthMiddleware, controllers.GetCurrentUser)
 }

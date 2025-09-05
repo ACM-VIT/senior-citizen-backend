@@ -34,9 +34,7 @@ func extractToken(c *fiber.Ctx) string {
 func AuthMiddleware(c *fiber.Ctx) error {
 	tokenString := extractToken(c)
 	if tokenString == "" {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Authorization token required",
-		})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Authorization token required"})
 	}
 
 	hydraAdminURL := "http://senior-citizen-backend-hydra-1:4445/admin"
@@ -52,38 +50,28 @@ func AuthMiddleware(c *fiber.Ctx) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Invalid response from introspection endpoint",
-		})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid response from introspection endpoint"})
 	}
 
 	var introspection HydraIntrospectionResponse
 	if err := json.NewDecoder(resp.Body).Decode(&introspection); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   "Failed to decode introspection response",
-			"details": err.Error(),
-		})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to decode introspection response", "details": err.Error()})
 	}
 
 	if !introspection.Active || introspection.Exp < time.Now().Unix() {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Inactive or expired token",
-		})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Inactive or expired token"})
 	}
 	kratosAdminURL := "http://senior-citizen-backend-kratos-1:4434"
 	kratosResp, err := http.Get(fmt.Sprintf("%s/admin/identities/%s", kratosAdminURL, introspection.Sub))
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   "Failed to fetch user info from Kratos",
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch user info from Kratos",
 			"details": err.Error(),
 		})
 	}
 	defer kratosResp.Body.Close()
 
 	if kratosResp.StatusCode != http.StatusOK {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fmt.Sprintf("Failed to fetch identity: status %d", kratosResp.StatusCode),
-		})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": fmt.Sprintf("Failed to fetch identity: status %d", kratosResp.StatusCode)})
 	}
 
 	var kratosIdentity struct {
@@ -101,9 +89,7 @@ func AuthMiddleware(c *fiber.Ctx) error {
 
 	userID, err := controllers.GetOrCreateUser(email)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "failed to check admin status",
-		})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to check admin status"})
 	}
 
 	claims := fiber.Map{

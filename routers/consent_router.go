@@ -7,6 +7,6 @@ import (
 )
 
 func ConsentRouter(app *fiber.App) {
-	consentGroup := app.Group("/consent")
+	consentGroup := app.Group("/api/v1/authconsent")
 	consentGroup.Get("/", handlers.ConsentHandler)
 }

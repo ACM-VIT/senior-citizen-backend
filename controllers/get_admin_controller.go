@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetOrCreateAdmin(c *fiber.Ctx) error {
+func GetAdmin(c *fiber.Ctx) error {
 	userID, ok := c.Locals("userID").(string)
 	if !ok {
 		return fiber.NewError(fiber.StatusUnauthorized, "invalid or missing userID")
@@ -16,24 +16,12 @@ func GetOrCreateAdmin(c *fiber.Ctx) error {
 
 	var admin models.Admin
 	result := database.DB.Where("user_id = ?", userID).First(&admin)
-	if result.Error == nil {
-		return c.JSON(fiber.Map{
-			"created": false,
-			"admin":   admin,
-		})
-	}
-
-	if result.Error != gorm.ErrRecordNotFound {
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User is not an admin"})
+		}
 		return result.Error
 	}
 
-	admin = models.Admin{UserID: userID}
-	if err := database.DB.Create(&admin).Error; err != nil {
-		return err
-	}
-
-	return c.JSON(fiber.Map{
-		"created": true,
-		"admin":   admin,
-	})
+	return c.JSON(admin)
 }

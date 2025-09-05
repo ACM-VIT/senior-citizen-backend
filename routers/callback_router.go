@@ -7,6 +7,6 @@ import (
 )
 
 func CallbackRouter(app *fiber.App) {
-	callbackGroup := app.Group("/callback")
+	callbackGroup := app.Group("/api/v1/auth/callback")
 	callbackGroup.Get("/", handlers.CallbackHandler)
 }

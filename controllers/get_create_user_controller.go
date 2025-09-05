@@ -19,7 +19,7 @@ func GetOrCreateUser(email string) (string, error) {
 	}
 
 	user = models.User{
-		Email:  email,
+		Email: email,
 	}
 	err := database.DB.Create(&user).Error
 	return user.ID, err
