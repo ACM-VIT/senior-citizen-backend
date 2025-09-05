@@ -16,16 +16,12 @@ var kratosAdminURL = "http://127.0.0.1:4434"
 func ConsentHandler(c *fiber.Ctx) error {
 	challenge := c.Query("consent_challenge")
 	if challenge == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "missing consent_challenge",
-		})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "missing consent_challenge"})
 	}
 
 	resp, err := http.Get(fmt.Sprintf("%s/oauth2/auth/requests/consent?consent_challenge=%s", hydraAdminURL, url.QueryEscape(challenge)))
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "failed to fetch consent request",
-		})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch consent request"})
 	}
 	defer resp.Body.Close()
 
@@ -35,18 +31,14 @@ func ConsentHandler(c *fiber.Ctx) error {
 		RequestedAccessTokenAudience []string `json:"requested_access_token_audience"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&consentReq); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "failed to decode consent request",
-		})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to decode consent request"})
 	}
 
 	identityID := consentReq.Subject
 
 	kratosResp, err := http.Get(fmt.Sprintf("%s/admin/identities/%s", kratosAdminURL, identityID))
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "failed to fetch kratos identity",
-		})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch kratos identity"})
 	}
 	defer kratosResp.Body.Close()
 
@@ -55,9 +47,7 @@ func ConsentHandler(c *fiber.Ctx) error {
 		Traits map[string]interface{} `json:"traits"`
 	}
 	if err := json.NewDecoder(kratosResp.Body).Decode(&kratosIdentity); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "failed to decode kratos identity",
-		})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to decode kratos identity"})
 	}
 
 	email, _ := kratosIdentity.Traits["email"].(string)
@@ -82,9 +72,7 @@ func ConsentHandler(c *fiber.Ctx) error {
 		strings.NewReader(string(bodyBytes)),
 	)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "failed to accept consent request",
-		})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to accept consent request"})
 	}
 	defer acceptResp.Body.Close()
 
@@ -92,9 +80,7 @@ func ConsentHandler(c *fiber.Ctx) error {
 		RedirectTo string `json:"redirect_to"`
 	}
 	if err := json.NewDecoder(acceptResp.Body).Decode(&acceptResult); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "failed to decode accept response",
-		})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to decode accept response"})
 	}
 
 	return c.Redirect(acceptResult.RedirectTo, http.StatusFound)

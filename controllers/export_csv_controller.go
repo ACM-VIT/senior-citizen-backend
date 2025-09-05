@@ -28,7 +28,7 @@ func ExportMembersCSV(c *fiber.Ctx) error {
 	}
 
 	var buf bytes.Buffer
-	buf.Write([]byte{0xEF, 0xBB, 0xBF}) 
+	buf.Write([]byte{0xEF, 0xBB, 0xBF})
 	writer := csv.NewWriter(&buf)
 
 	if err := writer.Write([]string{"Email"}); err != nil {

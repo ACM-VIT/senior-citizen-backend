@@ -17,7 +17,7 @@ func initApp() {
 		database.RunMigrations(database.DB)
 		// database.SetupPgTrgm(database.DB)
 	}
-	test.Test()
+	// test.Test()
 }
 
 func main() {
@@ -42,13 +42,14 @@ func setupRoutes(app *fiber.App) {
 	routers.ConsentRouter(app)
 	routers.CreateOrUpdateProfileRouter(app)
 	routers.ExportCSVRouter(app)
-	routers.GetOrCreateAdminRouter(app)
+	routers.GetAdminRouter(app)
+	routers.CreateAdminRouter(app)
 	routers.GetOrCreateUserRouter(app)
 	routers.GetCurrentUserRouter(app)
 	routers.GetMembersRouter(app)
 	routers.ProtectedRouter(app)
 	routers.SearchMembershipRouter(app)
-	routers.UpdateRolesRouter(app)
+	routers.UpdateProfileRouter(app)
 	routers.UpdateRolesRouter(app)
 
 }

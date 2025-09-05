@@ -8,7 +8,6 @@ import (
 )
 
 func ExportCSVRouter(app *fiber.App) {
-	ExportCSVRouter := app.Group("/export/csv")
-	ExportCSVRouter.Get("/", middleware.AuthMiddleware, middleware.AdminMiddleware,
-		controllers.ExportMembersCSV)
+	ExportCSVRouter := app.Group("/api/v1/csv/export")
+	ExportCSVRouter.Get("/", middleware.AuthMiddleware, middleware.AdminMiddleware, controllers.ExportMembersCSV)
 }

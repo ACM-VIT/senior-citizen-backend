@@ -37,10 +37,7 @@ func GetMembers(c *fiber.Ctx) error {
 	query = query.Offset(offset).Limit(body.PageSize)
 
 	var memberships []models.Membership
-	if err := query.
-		Preload("User").
-		Preload("Tenure").
-		Find(&memberships).Error; err != nil {
+	if err := query.Preload("User").Preload("Tenure").Find(&memberships).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Unable to fetch membership records.")
 	}
 
@@ -76,9 +73,5 @@ func GetMembers(c *fiber.Ctx) error {
 		TotalPages: totalPages,
 	}
 
-	return c.JSON(fiber.Map{
-		"status":  "success",
-		"message": "Members fetched successfully",
-		"data":    response,
-	})
+	return c.JSON(fiber.Map{"status": "success", "message": "Members fetched successfully", "data": response})
 }
