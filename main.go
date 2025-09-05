@@ -15,9 +15,9 @@ func initApp() {
 	database.ConnectToDB()
 	if os.Getenv("SHOULD_MIGRATE") == "true" {
 		database.RunMigrations(database.DB)
-		database.SetupPgTrgm(database.DB)
+		// database.SetupPgTrgm(database.DB)
 	}
-	// test.Test()
+	test.Test()
 }
 
 func main() {
@@ -37,14 +37,18 @@ func main() {
 func setupRoutes(app *fiber.App) {
 
 	test.GetAllUsersRouter(app)
-	routers.GetMembersRouter(app)
-	routers.GetMembership(app)
-	routers.ExportCSVRouter(app)
 	test.GetAllUsersRouter(app)
-	routers.UpdateInformationRouter(app)
-	routers.SearchMembershipRouter(app)
-	routers.UpdateRolesRouter(app)
-	routers.ProtectedRouter(app)
 	routers.CallbackRouter(app)
 	routers.ConsentRouter(app)
+	routers.CreateOrUpdateProfileRouter(app)
+	routers.ExportCSVRouter(app)
+	routers.GetOrCreateAdminRouter(app)
+	routers.GetOrCreateUserRouter(app)
+	routers.GetCurrentUserRouter(app)
+	routers.GetMembersRouter(app)
+	routers.ProtectedRouter(app)
+	routers.SearchMembershipRouter(app)
+	routers.UpdateRolesRouter(app)
+	routers.UpdateRolesRouter(app)
+
 }

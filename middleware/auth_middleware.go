@@ -19,9 +19,7 @@ type HydraIntrospectionResponse struct {
 	Exp      int64    `json:"exp"`
 	Scope    string   `json:"scope"`
 	ClientID string   `json:"client_id"`
-	Name     string   `json:"name,omitempty"`
 	Email    string   `json:"email,omitempty"`
-	Admin    bool     `json:"admin,omitempty"`
 	Audience []string `json:"aud,omitempty"`
 }
 
@@ -41,7 +39,8 @@ func AuthMiddleware(c *fiber.Ctx) error {
 		})
 	}
 
-	resp, err := http.PostForm("http://127.0.0.1:4444/oauth2/introspect", url.Values{
+	hydraAdminURL := "http://senior-citizen-backend-hydra-1:4445/admin"
+	resp, err := http.PostForm(hydraAdminURL+"/oauth2/introspect", url.Values{
 		"token": {tokenString},
 	})
 	if err != nil {
@@ -71,7 +70,6 @@ func AuthMiddleware(c *fiber.Ctx) error {
 			"error": "Inactive or expired token",
 		})
 	}
-
 	kratosAdminURL := "http://senior-citizen-backend-kratos-1:4434"
 	kratosResp, err := http.Get(fmt.Sprintf("%s/admin/identities/%s", kratosAdminURL, introspection.Sub))
 	if err != nil {
@@ -101,7 +99,7 @@ func AuthMiddleware(c *fiber.Ctx) error {
 
 	email, _ := kratosIdentity.Traits["email"].(string)
 
-	userID, err := controllers.FetchOrCreateUser(email)
+	userID, err := controllers.GetOrCreateUser(email)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "failed to check admin status",
@@ -119,7 +117,6 @@ func AuthMiddleware(c *fiber.Ctx) error {
 	c.Locals("claims", claims)
 	c.Locals("userID", userID)
 	c.Locals("kratosID", introspection.Sub)
-	c.Locals("admin", isAdmin)
 
 	return c.Next()
 }
