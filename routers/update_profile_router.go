@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func UpdateInformationRouter(app *fiber.App) {
-	UpdateInformationRouter := app.Group("/update/information")
-	UpdateInformationRouter.Put("/", middleware.AuthMiddleware, controllers.UpdateProfile)
+func UpdateProfileRouter(app *fiber.App) {
+	UpdateProfileGroup := app.Group("/update/profile")
+	UpdateProfileGroup.Put("/", middleware.AuthMiddleware, controllers.UpdateProfile)
 }

@@ -7,6 +7,6 @@ import (
 )
 
 func SearchMembershipRouter(app *fiber.App) {
-	SearchMembers := app.Group("/search/member")
-	SearchMembers.Post("/", controllers.SearchMembership)
+	SearchMembersGroup := app.Group("/search/member")
+	SearchMembersGroup.Post("/", controllers.SearchMembership)
 }
