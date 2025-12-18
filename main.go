@@ -38,6 +38,7 @@ func main() {
 
 func setupRoutes(app *fiber.App) {
 
+	routers.UIRouter(app)
 	routers.ConsentRouter(app)
 	routers.LoginRouter(app)
 	routers.CallbackRouter(app)

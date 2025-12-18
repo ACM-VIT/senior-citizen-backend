@@ -45,6 +45,11 @@ services:
       - ./config:/etc/config/hydra
     networks:
       - intranet
+    depends_on:
+      hydra-postgres:
+        condition: service_healthy
+      hydra-migrate:
+        condition: service_completed_successfully
 
   hydra-migrate:
     image: oryd/hydra:v2.2.0
@@ -55,25 +60,6 @@ services:
       - intranet
     depends_on:
       - hydra-postgres
-    restart: on-failure
-
-  kratos-selfservice-ui-node:
-    image: oryd/kratos-selfservice-ui-node:v1.1.0
-    ports:
-      - "4455:4455"
-    env_file:
-      - .env
-    environment:
-      - PORT=4455
-      - HYDRA_ADMIN_URL=http://hydra:4445
-      - KRATOS_PUBLIC_URL=http://kratos:4433
-      - KRATOS_BROWSER_URL=http://127.0.0.1:4433
-      - COOKIE_SECRET=${COOKIE_SECRET}
-      - CSRF_COOKIE_NAME=${CSRF_COOKIE_NAME}
-      - CSRF_COOKIE_SECRET=${CSRF_COOKIE_SECRET}
-      - DANGEROUSLY_DISABLE_SECURE_CSRF_COOKIES=true
-    networks:
-      - intranet
     restart: on-failure
 
   cockroach-cert:
@@ -160,7 +146,8 @@ services:
       - HYDRA_INTROSPECTION_CLIENT_SECRET=${HYDRA_INTROSPECTION_CLIENT_SECRET:-}
       - KRATOS_ADMIN_URL=${KRATOS_ADMIN_URL:-http://kratos:4434}
       - KRATOS_PUBLIC_URL=${KRATOS_PUBLIC_URL:-http://kratos:4433}
-      - KRATOS_UI_URL=${KRATOS_UI_URL:-http://127.0.0.1:4455}
+      - KRATOS_BROWSER_URL=${KRATOS_BROWSER_URL:-http://127.0.0.1:4433}
+      - KRATOS_UI_URL=${KRATOS_UI_URL:-http://127.0.0.1:3000/ui}
       - SHOULD_MIGRATE=${SHOULD_MIGRATE:-true}
     networks:
       - intranet
@@ -197,6 +184,11 @@ services:
       - intranet
     volumes:
       - hydra-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hydra -d hydra"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 networks:
   intranet:
