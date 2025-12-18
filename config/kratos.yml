@@ -14,6 +14,7 @@ selfservice:
     - http://127.0.0.1:4455
     - http://127.0.0.1:4433/self-service
     - http://127.0.0.1:4444/oauth2/auth
+    - http://127.0.0.1:3000/api/v1/auth/login
 
   methods:
     password:

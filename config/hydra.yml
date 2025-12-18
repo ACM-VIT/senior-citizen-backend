@@ -5,7 +5,7 @@ urls:
   self:
     issuer: http://127.0.0.1:4444
   consent: http://127.0.0.1:3000/api/v1/authconsent
-  login: http://127.0.0.1:4455/login
+  login: http://127.0.0.1:3000/api/v1/auth/login
   logout: http://127.0.0.1:4455/logout
   identity_provider:
     publicUrl: http://127.0.0.1:4433

@@ -13,7 +13,7 @@ type Event struct {
 	Venue             string     `gorm:"type:varchar(255)" json:"venue"`
 	EventType         EventType  `gorm:"type:varchar(20)" json:"event_type"`
 	Date              time.Time  `gorm:"type:timestamp" json:"date"`
-	StartTime         *time.Time  `gorm:"type:timestamp" json:"start_time,omitempty"`
+	StartTime         *time.Time `gorm:"type:timestamp" json:"start_time,omitempty"`
 	EndTime           *time.Time `gorm:"type:timestamp" json:"end_time,omitempty"`
 	NumberOfAttendees uint       `json:"number_of_attendees"`
 	NumberOfWinners   uint       `json:"number_of_winners"`

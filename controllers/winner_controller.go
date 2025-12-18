@@ -29,10 +29,8 @@ func ListWinners(c *fiber.Ctx) error {
 	countQuery := database.DB.Model(&models.Winner{})
 
 	if eventID := strings.TrimSpace(c.Query("event_id")); eventID != "" {
-		query = query.Joins("JOIN participations p ON p.id = winners.participation_id").
-			Where("p.event_id = ?", eventID)
-		countQuery = countQuery.Joins("JOIN participations p ON p.id = winners.participation_id").
-			Where("p.event_id = ?", eventID)
+		query = query.Where("event_id = ?", eventID)
+		countQuery = countQuery.Where("event_id = ?", eventID)
 	}
 
 	page, _ := strconv.Atoi(c.Query("page", "1"))
@@ -91,15 +89,24 @@ func CreateWinner(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "position is required")
 	}
 
-	if err := database.DB.First(&models.Participation{}, "id = ?", body.ParticipationID).Error; err != nil {
+	var participation models.Participation
+	if err := database.DB.First(&participation, "id = ?", body.ParticipationID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return fiber.NewError(fiber.StatusNotFound, "Participation not found.")
 		}
 		return fiber.NewError(fiber.StatusInternalServerError, "Unable to fetch participation.")
 	}
 
+	var existing models.Winner
+	if err := database.DB.Where("event_id = ? AND position = ?", participation.EventID, body.Position).First(&existing).Error; err == nil {
+		return fiber.NewError(fiber.StatusConflict, "Winner position already assigned for this event.")
+	} else if err != gorm.ErrRecordNotFound {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to check winner position.")
+	}
+
 	winner := models.Winner{
 		ParticipationID: body.ParticipationID,
+		EventID:         participation.EventID,
 		Position:        body.Position,
 	}
 
@@ -135,13 +142,15 @@ func UpdateWinner(c *fiber.Ctx) error {
 
 	updates := map[string]interface{}{}
 	if body.ParticipationID != nil {
-		if err := database.DB.First(&models.Participation{}, "id = ?", *body.ParticipationID).Error; err != nil {
+		var participation models.Participation
+		if err := database.DB.First(&participation, "id = ?", *body.ParticipationID).Error; err != nil {
 			if err == gorm.ErrRecordNotFound {
 				return fiber.NewError(fiber.StatusNotFound, "Participation not found.")
 			}
 			return fiber.NewError(fiber.StatusInternalServerError, "Unable to fetch participation.")
 		}
 		updates["participation_id"] = *body.ParticipationID
+		updates["event_id"] = participation.EventID
 	}
 	if body.Position != nil {
 		if *body.Position == 0 {
@@ -151,6 +160,22 @@ func UpdateWinner(c *fiber.Ctx) error {
 	}
 
 	if len(updates) > 0 {
+		eventID := winner.EventID
+		if updatedEventID, ok := updates["event_id"].(string); ok && updatedEventID != "" {
+			eventID = updatedEventID
+		}
+		position := winner.Position
+		if updatedPosition, ok := updates["position"].(uint); ok && updatedPosition > 0 {
+			position = updatedPosition
+		}
+
+		var existing models.Winner
+		if err := database.DB.Where("id <> ? AND event_id = ? AND position = ?", winnerID, eventID, position).First(&existing).Error; err == nil {
+			return fiber.NewError(fiber.StatusConflict, "Winner position already assigned for this event.")
+		} else if err != gorm.ErrRecordNotFound {
+			return fiber.NewError(fiber.StatusInternalServerError, "Failed to check winner position.")
+		}
+
 		if err := database.DB.Model(&winner).Updates(updates).Error; err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "Failed to update winner.")
 		}

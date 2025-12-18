@@ -29,14 +29,9 @@ func GetMembers(c *fiber.Ctx) error {
 		countQuery = countQuery.Where("position = ?", body.Position)
 	}
 
-	if body.Page == 0 || body.Page < 1 {
-		body.Page = 1
-	}
-	if body.PageSize == 0 || body.PageSize < 1 {
-		body.PageSize = 10
-	}
-
-	offset, _ := helpers.CalculatePagination(body.Page, body.PageSize, 0)
+	page, pageSize, offset := helpers.NormalizePagination(body.Page, body.PageSize)
+	body.Page = page
+	body.PageSize = pageSize
 	query = query.Offset(offset).Limit(body.PageSize)
 
 	var memberships []models.Membership
