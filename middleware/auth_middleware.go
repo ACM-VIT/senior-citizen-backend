@@ -10,6 +10,7 @@ import (
 
 	"acm-portal/controllers"
 	"acm-portal/internal/config"
+	"acm-portal/internal/ory"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -43,11 +44,18 @@ func AuthMiddleware(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "missing auth service configuration"})
 	}
 
-	hydraAdminURL := strings.TrimSuffix(cfg.HydraAdminURL, "/")
-	introspectURL := hydraAdminURL + "/admin/oauth2/introspect"
-	resp, err := http.PostForm(introspectURL, url.Values{
-		"token": {tokenString},
-	})
+	introspectURL := ory.HydraAdminURL(cfg.HydraAdminURL, "/oauth2/introspect")
+	form := url.Values{"token": {tokenString}}
+	req, err := http.NewRequest(http.MethodPost, introspectURL, strings.NewReader(form.Encode()))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to build introspection request"})
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if cfg.HydraIntrospectionClientID != "" && cfg.HydraIntrospectionClientSecret != "" {
+		req.SetBasicAuth(cfg.HydraIntrospectionClientID, cfg.HydraIntrospectionClientSecret)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   "Failed to introspect token",

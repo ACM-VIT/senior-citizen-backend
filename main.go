@@ -39,6 +39,8 @@ func main() {
 func setupRoutes(app *fiber.App) {
 
 	routers.ConsentRouter(app)
+	routers.LoginRouter(app)
+	routers.CallbackRouter(app)
 	routers.CreateOrUpdateProfileRouter(app)
 	routers.ExportCSVRouter(app)
 	routers.GetAdminRouter(app)

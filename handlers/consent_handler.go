@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"acm-portal/internal/config"
+	"acm-portal/internal/ory"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -23,10 +24,9 @@ func ConsentHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "missing auth service configuration"})
 	}
 
-	hydraAdminURL := strings.TrimSuffix(cfg.HydraAdminURL, "/")
 	kratosAdminURL := strings.TrimSuffix(cfg.KratosAdminURL, "/")
 
-	consentURL := fmt.Sprintf("%s/admin/oauth2/auth/requests/consent?consent_challenge=%s", hydraAdminURL, url.QueryEscape(challenge))
+	consentURL := ory.HydraAdminURL(cfg.HydraAdminURL, "/oauth2/auth/requests/consent") + "?consent_challenge=" + url.QueryEscape(challenge)
 	resp, err := http.Get(consentURL)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch consent request"})
@@ -69,9 +69,10 @@ func ConsentHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "missing email in identity traits"})
 	}
 	acceptPayload := map[string]interface{}{
-		"grant_scope":  consentReq.RequestedScope,
-		"remember":     true,
-		"remember_for": 3600,
+		"grant_scope":                 consentReq.RequestedScope,
+		"grant_access_token_audience": consentReq.RequestedAccessTokenAudience,
+		"remember":                    true,
+		"remember_for":                3600,
 		"session": map[string]interface{}{
 			"id_token": map[string]interface{}{
 				"email": email,
@@ -83,11 +84,13 @@ func ConsentHandler(c *fiber.Ctx) error {
 	}
 
 	bodyBytes, _ := json.Marshal(acceptPayload)
-	acceptResp, err := http.Post(
-		fmt.Sprintf("%s/admin/oauth2/auth/requests/consent/accept?consent_challenge=%s", hydraAdminURL, url.QueryEscape(challenge)),
-		"application/json",
-		strings.NewReader(string(bodyBytes)),
-	)
+	acceptURL := ory.HydraAdminURL(cfg.HydraAdminURL, "/oauth2/auth/requests/consent/accept") + "?consent_challenge=" + url.QueryEscape(challenge)
+	acceptReq, err := http.NewRequest(http.MethodPut, acceptURL, strings.NewReader(string(bodyBytes)))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to build consent accept request"})
+	}
+	acceptReq.Header.Set("Content-Type", "application/json")
+	acceptResp, err := http.DefaultClient.Do(acceptReq)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to accept consent request"})
 	}
