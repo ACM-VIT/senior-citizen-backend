@@ -2,26 +2,28 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/gofiber/fiber/v2"
 
 	"acm-portal/database"
+	"acm-portal/internal/config"
 	"acm-portal/routers"
-	"acm-portal/test"
 )
 
-func initApp() {
-	database.ConnectToDB()
-	if os.Getenv("SHOULD_MIGRATE") == "true" {
+func initApp(cfg config.Config) {
+	database.ConnectToDB(cfg)
+	if cfg.ShouldMigrate {
 		database.RunMigrations(database.DB)
-		// database.SetupPgTrgm(database.DB)
 	}
-	// test.Test()
 }
 
 func main() {
-	initApp()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	initApp(cfg)
 
 	app := fiber.New()
 
@@ -31,14 +33,11 @@ func main() {
 		return c.SendString("Hello, Fiber + GORM!")
 	})
 
-	log.Fatal(app.Listen(":3000"))
+	log.Fatal(app.Listen(":" + cfg.Port))
 }
 
 func setupRoutes(app *fiber.App) {
 
-	test.GetAllUsersRouter(app)
-	test.GetAllUsersRouter(app)
-	routers.CallbackRouter(app)
 	routers.ConsentRouter(app)
 	routers.CreateOrUpdateProfileRouter(app)
 	routers.ExportCSVRouter(app)
@@ -47,6 +46,12 @@ func setupRoutes(app *fiber.App) {
 	routers.GetOrCreateUserRouter(app)
 	routers.GetCurrentUserRouter(app)
 	routers.GetMembersRouter(app)
+	routers.TenureRouter(app)
+	routers.EventRouter(app)
+	routers.SponsorRouter(app)
+	routers.ParticipationRouter(app)
+	routers.WinnerRouter(app)
+	routers.EmailPreferencesRouter(app)
 	routers.ProtectedRouter(app)
 	routers.SearchMembershipRouter(app)
 	routers.UpdateProfileRouter(app)

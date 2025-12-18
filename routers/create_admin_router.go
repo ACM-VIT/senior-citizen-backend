@@ -9,5 +9,5 @@ import (
 
 func CreateAdminRouter(app *fiber.App) {
 	CreateAdminGroup := app.Group("/api/v1/admin/create")
-	CreateAdminGroup.Get("/", middleware.AuthMiddleware, middleware.AdminMiddleware, controllers.CreateAdmin)
+	CreateAdminGroup.Post("/", middleware.AuthMiddleware, middleware.AdminMiddleware, controllers.CreateAdmin)
 }
