@@ -76,19 +76,45 @@ services:
       - intranet
     restart: on-failure
 
+  cockroach:
+    image: cockroachdb/cockroach:v23.1.13
+    command: start-single-node --insecure --store=/cockroach/cockroach-data --listen-addr=0.0.0.0:26257 --http-addr=0.0.0.0:8080
+    ports:
+      - "26257:26257"
+      - "8080:8080"
+    networks:
+      - intranet
+    volumes:
+      - cockroach-data:/cockroach/cockroach-data
+
+  cockroach-init:
+    image: cockroachdb/cockroach:v23.1.13
+    depends_on:
+      - cockroach
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["sleep 2; cockroach sql --insecure --host=cockroach:26257 -e 'CREATE DATABASE IF NOT EXISTS senior_citizen;'"]
+    networks:
+      - intranet
+    restart: "no"
+
   backend:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8081:8080"
       - "3000:3000"
     env_file:
       - .env
     environment:
-      - DB_URL=${DATABASE_URL}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://root@cockroach:26257/senior_citizen?sslmode=disable}
+      - HYDRA_ADMIN_URL=${HYDRA_ADMIN_URL:-http://hydra:4445}
+      - KRATOS_ADMIN_URL=${KRATOS_ADMIN_URL:-http://kratos:4434}
+      - SHOULD_MIGRATE=${SHOULD_MIGRATE:-true}
     networks:
       - intranet
+    depends_on:
+      - cockroach
+      - cockroach-init
 
   kratos-postgres:
     image: postgres:15
@@ -122,3 +148,4 @@ networks:
 volumes:
   kratos-db:
   hydra-db:
+  cockroach-data:

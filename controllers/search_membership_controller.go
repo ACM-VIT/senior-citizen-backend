@@ -5,8 +5,6 @@ import (
 	"acm-portal/models"
 	"strings"
 
-	"gorm.io/gorm"
-
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -42,43 +40,17 @@ func SearchMembership(c *fiber.Ctx) error {
 
 	if body.Query != "" {
 		q := strings.ToLower(body.Query)
-		if len(q) < 3 {
-			// fallback simple search
-			dbQuery = dbQuery.Where(`
-                LOWER(u.name) ILIKE ? OR
-                LOWER(p.phone) ILIKE ? OR
-                LOWER(p.gender) ILIKE ? OR
-                LOWER(p.job_title) ILIKE ? OR
-                LOWER(p.company) ILIKE ? OR
-                LOWER(memberships.role) ILIKE ? OR
-                LOWER(memberships.position) ILIKE ?`,
-				"%"+q+"%", "%"+q+"%", "%"+q+"%",
-				"%"+q+"%", "%"+q+"%", "%"+q+"%", "%"+q+"%",
-			)
-		} else {
-			dbQuery = dbQuery.Where(`
-			(
-                u.name % ? OR
-                p.phone % ? OR
-                p.gender % ? OR
-                p.job_title % ? OR
-                p.company % ? OR
-                memberships.role % ? OR
-                memberships.position % ?
-				)`,
-				q, q, q, q, q, q, q,
-			).Order(gorm.Expr(`
-                GREATEST(
-                    similarity(u.name, ?),
-                    similarity(p.phone, ?),
-                    similarity(p.gender, ?),
-                    similarity(p.job_title, ?),
-                    similarity(p.company, ?),
-                    similarity(memberships.role, ?),
-                    similarity(memberships.position, ?)
-                ) DESC
-            `, q, q, q, q, q, q, q))
-		}
+		dbQuery = dbQuery.Where(`
+			LOWER(p.name) ILIKE ? OR
+			LOWER(p.phone) ILIKE ? OR
+			LOWER(p.gender) ILIKE ? OR
+			LOWER(p.job_title) ILIKE ? OR
+			LOWER(p.company) ILIKE ? OR
+			LOWER(memberships.role) ILIKE ? OR
+			LOWER(memberships.position) ILIKE ?`,
+			"%"+q+"%", "%"+q+"%", "%"+q+"%",
+			"%"+q+"%", "%"+q+"%", "%"+q+"%", "%"+q+"%",
+		)
 	}
 
 	// Filters

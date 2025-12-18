@@ -4,12 +4,16 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 
 	_ "github.com/lib/pq"
 )
 
 func main() {
-	dsn := "postgresql://acm-vit:8rKbDJw-ZkiBqbiHaNEBiQ@rc-2024-3929.7s5.aws-ap-south-1.cockroachlabs.cloud:26257/senior-citizen?sslmode=verify-full"
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		log.Fatal("DATABASE_URL is required")
+	}
 
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {

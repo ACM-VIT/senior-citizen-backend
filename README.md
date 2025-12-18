@@ -1,73 +1,65 @@
-# Senior Citizen Backend – API Documentation
+# Senior Citizen Backend
 
-This document provides the API reference for the **senior-citizen-backend** service.  
-The backend uses:
+Go API service for the senior-citizen platform. It uses:
 
-- **Ory Hydra** → for OAuth2 / OIDC authentication and token management.
-- **Ory Kratos** → for user identity, self-service flows (registration, login, recovery), and profile data.
+- Ory Hydra for OAuth2/OIDC
+- Ory Kratos for identity and self-service flows
+- CockroachDB for application data
+- Fiber + GORM for the API
 
-The service exposes REST endpoints for:
+## Local development (Docker Compose)
 
-- User management
-- Profile creation and updates
-- Admin management
-- OAuth2 integration flows (Hydra + Kratos)
+1. Copy `.env.example` to `.env` and update secrets.
+2. Start the stack:
 
----
-
-## 1. Register Client
-
-**Endpoint:**  
-`POST http://127.0.0.1:4445/clients`
-
-**Description:**  
-Register a new OAuth2 client with Hydra.
-
-**Request Body:**
-
-```json
-{
-  "client_id": "reverse-coding",
-  "client_secret": "rc-secret",
-  "grant_types": ["authorization_code", "refresh_token"],
-  "response_types": ["code", "id_token", "token"],
-  "scope": "openid email profile offline",
-  "redirect_uris": ["http://localhost:3000/callback"],
-  "token_endpoint_auth_method": "client_secret_post",
-  "access_token_strategy": "jwt"
-}
+```sh
+docker compose up --build
 ```
 
----
+Default ports:
 
-## 2. Get Tokens
+- API: `http://127.0.0.1:3000`
+- Hydra public: `http://127.0.0.1:4444`
+- Hydra admin: `http://127.0.0.1:4445`
+- Kratos public: `http://127.0.0.1:4433`
+- Kratos admin: `http://127.0.0.1:4434`
+- Kratos UI: `http://127.0.0.1:4455`
 
-**Step 1 – Authorization Request**
+If you run the API locally outside Docker, set `HYDRA_ADMIN_URL` and `KRATOS_ADMIN_URL` to `http://127.0.0.1:4445` and `http://127.0.0.1:4434`.
 
-Open the following URL in a browser to start the OAuth2 flow:
+## Auth and SSO
+
+The backend acts as a resource server. Clients should run the OAuth2 authorization code flow directly against Hydra. The API expects a `Bearer` token from Hydra and validates it via the Hydra admin introspection endpoint.
+
+### Register a client
+
+```sh
+curl -X POST http://127.0.0.1:4445/admin/clients \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": "reverse-coding",
+    "client_secret": "rc-secret",
+    "grant_types": ["authorization_code", "refresh_token"],
+    "response_types": ["code", "id_token", "token"],
+    "scope": "openid email profile offline",
+    "redirect_uris": ["http://localhost:3000/callback"],
+    "token_endpoint_auth_method": "client_secret_post",
+    "access_token_strategy": "jwt"
+  }'
+```
+
+### Authorization flow
+
+1) Authorization request (browser):
 
 ```http
 GET http://127.0.0.1:4444/oauth2/auth?client_id=reverse-coding&response_type=code&scope=openid%20email%20profile%20offline&redirect_uri=http://localhost:3000/callback&state=<RANDOM_STATE>
 ```
 
-- Replace `<RANDOM_STATE>` with a random string for CSRF protection.
-- After login/consent, you’ll be redirected to:
-
-  ```
-  http://localhost:3000/callback?code=<AUTH_CODE>&state=<RANDOM_STATE>
-  ```
-
-**Step 2 – Token Request**
-
-**Endpoint:**
-`POST http://127.0.0.1:4444/oauth2/token`
-
-**Description:**
-Exchange the authorization code for tokens.
-
-**Request Body (x-www-form-urlencoded):**
+2) Token exchange (server-side client):
 
 ```http
+POST http://127.0.0.1:4444/oauth2/token
 grant_type=authorization_code
 code=<AUTH_CODE>
 redirect_uri=http://localhost:3000/callback
@@ -75,293 +67,92 @@ client_id=reverse-coding
 client_secret=rc-secret
 ```
 
----
+### Consent handling
 
-## 3. Get Current User
+Hydra redirects consent requests to:
 
-**Endpoint:**
-`POST /api/v1/user/get`
-
-**Description:**
-Get details of the authenticated user.
-
-**Request Headers:**
-
-```http
-Authorization: Bearer <ACCESS_TOKEN>
+```
+GET /api/v1/authconsent?consent_challenge=<challenge>
 ```
 
----
+The backend accepts the consent request, pulls identity traits from Kratos, and returns Hydra’s redirect.
 
-## 4. Get All Members
+## API Endpoints
 
-**Endpoint:**
-`POST /api/v1/members/get`
+All endpoints require `Authorization: Bearer <ACCESS_TOKEN>` unless noted.
 
-**Description:**
-Fetch details of all members.
+### Users and Admin
 
-**Request Headers:**
+- `GET /api/v1/user/get` - get current user (includes profile).
+- `GET /api/v1/user/create?email=<EMAIL>` - get or create a user by email (admin only).
+- `GET /api/v1/admin/get` - check if current user is admin.
+- `POST /api/v1/admin/create` - create admin for a user (admin only). Body:
+  ```json
+  { "user_id": "<UUID>" }
+  ```
+  or
+  ```json
+  { "email": "user@example.com" }
+  ```
 
-```http
-Authorization: Bearer <ACCESS_TOKEN>
-```
+### Profiles
 
----
+- `POST /api/v1/profile/create` - create or update the current user profile.
+- `PUT /api/v1/profile/update` - partial update of the current user profile.
 
-## 5. Create or Update Profile
+### Members and Roles
 
-**Endpoint:**
-`POST /api/v1/profile/create`
+- `GET /api/v1/members/get?role=&position=&page=&page_size=` - list memberships.
+- `POST /api/v1/search/member` - search memberships.
+- `POST /api/v1/roles/update` - update roles (admin only).
+- `GET /api/v1/csv/export` - export member emails as CSV (admin only).
 
-**Description:**
-Create or update a user profile.
+### Tenures
 
-**Request Headers:**
+- `GET /api/v1/tenures?current=true&page=&page_size=`
+- `GET /api/v1/tenures/:id`
+- `POST /api/v1/tenures` (admin only)
+- `PUT /api/v1/tenures/:id` (admin only)
+- `DELETE /api/v1/tenures/:id` (admin only)
 
-```http
-Authorization: Bearer <ACCESS_TOKEN>
-```
+### Events
 
-**Request Body:**
+- `GET /api/v1/events?tenure_id=&event_type=&page=&page_size=`
+- `GET /api/v1/events/:id`
+- `POST /api/v1/events` (admin only)
+- `PUT /api/v1/events/:id` (admin only)
+- `DELETE /api/v1/events/:id` (admin only)
 
-```json
-{
-  "user_id": "user-id",
-  "name": "John Doe",
-  "profile_picture_url": "https://example.com/pic.png",
-  "phone": "9876543210",
-  "gender": "male",
-  "bio": "I love programming",
-  "the_sentence": "Learning never stops.",
-  "linkedin": "https://linkedin.com/in/johndoe",
-  "github": "https://github.com/johndoe",
-  "twitter": "https://twitter.com/johndoe",
-  "instagram": "https://instagram.com/johndoe",
-  "job_title": "Software Engineer",
-  "company": "Tech Corp",
-  "website": "https://johndoe.dev"
-}
-```
+Create/update accepts `sponsor_ids` to attach sponsors.
+Valid `event_type` values: `online`, `offline`, `hybrid`.
 
----
+### Sponsors
 
-## 6. Create Admin
+- `GET /api/v1/sponsors?page=&page_size=`
+- `GET /api/v1/sponsors/:id`
+- `POST /api/v1/sponsors` (admin only)
+- `PUT /api/v1/sponsors/:id` (admin only)
+- `DELETE /api/v1/sponsors/:id` (admin only)
 
-**Endpoint:**
-`POST /api/v1/admin/create`
+### Participations
 
-**Description:**
-Create or update an admin record.
+- `GET /api/v1/participations?event_id=&page=&page_size=`
+- `GET /api/v1/participations/:id`
+- `POST /api/v1/participations`
+- `PUT /api/v1/participations/:id`
+- `DELETE /api/v1/participations/:id`
 
-**Request Headers:**
+Non-admin users can only view/update/delete their own records. Admins can act on any user and set `user_id` in requests.
 
-```http
-Authorization: Bearer <ACCESS_TOKEN>
-```
+### Winners
 
----
+- `GET /api/v1/winners?event_id=&page=&page_size=`
+- `GET /api/v1/winners/:id`
+- `POST /api/v1/winners` (admin only)
+- `PUT /api/v1/winners/:id` (admin only)
+- `DELETE /api/v1/winners/:id` (admin only)
 
-## 7. Export CSV
+### Email Preferences
 
-**Endpoint:**
-`GET /api/v1/csv/export`
-
-**Description:**
-Export all users as CSV.
-
-**Request Headers:**
-
-```http
-Authorization: Bearer <ACCESS_TOKEN>
-```
-
----
-
-## 8. Get or Create User
-
-**Endpoint:**
-`GET /api/v1/user/create?email=<EMAIL>`
-
-**Description:**
-Get or create a user by email.
-
-**Request Headers:**
-
-```http
-Authorization: Bearer <ACCESS_TOKEN>
-```
-
-**Example:**
-
-```http
-GET /api/v1/user/create?email=johndoe@example.com
-```
-
----
-
-## 9. Protected Route
-
-**Endpoint:**
-`GET /api/v1/auth/protected`
-
-**Description:**
-A test route that requires authentication.
-
-**Request Headers:**
-
-```http
-Authorization: Bearer <ACCESS_TOKEN>
-```
-
----
-
-## 10. OAuth2 Callback
-
-**Endpoint:**
-`GET /api/v1/auth/callback`
-
-**Description:**
-Handles the OAuth2 callback from the authorization server.
-Exchanges the authorization code for tokens based on the `app` identifier.
-
-**Query Parameters:**
-
-| Name | Type   | Required | Description                                              |
-| ---- | ------ | -------- | -------------------------------------------------------- |
-| app  | string | Yes      | App identifier (`reverse-coding`, `cryptic-hunt`, `c2c`) |
-| code | string | Yes      | Authorization code returned by `/oauth2/auth`            |
-
-**Example Request:**
-
-```http
-GET http://127.0.0.1:3000/api/v1/auth/callback?app=reverse-coding&code=abc123
-```
-
----
-
-## 11. OAuth2 Consent Flow
-
-**Endpoint:**  
-`GET /api/v1/authconsent`
-
-**Description:**  
-Handles the OAuth2 **consent challenge** from Hydra.
-
-- Fetches the consent request from **Hydra**
-- Looks up the user identity in **Kratos**
-- Accepts the consent request with granted scopes (`openid`, `profile`, `email`)
-- Redirects back to Hydra’s authorization flow
-
-**Query Parameters**
-
-| Name              | Type   | Required | Description                                |
-| ----------------- | ------ | -------- | ------------------------------------------ |
-| consent_challenge | string | Yes      | Consent challenge string provided by Hydra |
-
-**Example Request**
-
-```http
-GET http://127.0.0.1:3000/api/v1/authconsent?consent_challenge=abc123
-```
-
----
-
-## 11. Update Profile
-
-**Endpoint:** `PUT /api/v1/profile/update`
-**Description:** Update the profile information of the authenticated user.
-
-**Request Headers**
-
-```http
-Authorization: Bearer <ACCESS_TOKEN>
-Content-Type: application/json
-```
-
-**Request Body**
-
-```json
-{
-  "name": "John Doe",
-  "profile_picture_url": "https://example.com/pic.png",
-  "phone": "9876543210",
-  "gender": "male",
-  "bio": "I love programming",
-  "the_sentence": "Learning never stops.",
-  "linkedin": "https://linkedin.com/in/johndoe",
-  "github": "https://github.com/johndoe",
-  "twitter": "https://twitter.com/johndoe",
-  "instagram": "https://instagram.com/johndoe",
-  "job_title": "Software Engineer",
-  "company": "Tech Corp",
-  "website": "https://johndoe.dev"
-}
-```
-
-**Note:**
-
-- Only include the fields you want to update.
-- Fields not included in the request body will remain unchanged.
-
----
-
-## 12. Update Roles
-
-**Endpoint:** `POST /api/v1/roles/update`  
-**Description:** Create or update roles and positions for users in a specific tenure. Only **admin users** can access this route.
-
-**Request Headers**
-
-```http
-Authorization: Bearer <ACCESS_TOKEN>
-Content-Type: application/json
-```
-
-**Request Body**
-
-```json
-[
-  {
-    "email": "johndoe@example.com",
-    "role": "member",
-    "position": "secretary",
-    "tenure": "2025"
-  },
-  {
-    "email": "janedoe@example.com",
-    "role": "admin",
-    "position": "chair",
-    "tenure": "2025"
-  }
-]
-```
-
-**Notes:**
-
-- `email` must correspond to an existing user.
-- `role` and `position` must be valid (checked via helpers).
-- `tenure` must exist.
-
----
-
-## 13. Get Admin
-
-**Endpoint:**
-`POST /api/v1/admin/get`
-
-**Description:**
-Check if the authenticated user is an admin.
-
-**Request Headers:**
-
-```http
-Authorization: Bearer <ACCESS_TOKEN>
-```
-
-### **Admin Routes**
-
-1. Create admin
-2. Export CSV
-3. Get or create user
-4. Update Roles
+- `GET /api/v1/email-preferences`
+- `PUT /api/v1/email-preferences`

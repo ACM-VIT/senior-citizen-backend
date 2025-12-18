@@ -1,14 +1,15 @@
 package middleware
 
 import (
-	"acm-portal/controllers"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
+
+	"acm-portal/controllers"
+	"acm-portal/internal/config"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -24,11 +25,11 @@ type HydraIntrospectionResponse struct {
 }
 
 func extractToken(c *fiber.Ctx) string {
-	bearerToken := c.Get("Authorization")
+	bearerToken := strings.TrimSpace(c.Get("Authorization"))
 	if strings.HasPrefix(bearerToken, "Bearer ") {
-		return strings.TrimPrefix(bearerToken, "Bearer ")
+		return strings.TrimSpace(strings.TrimPrefix(bearerToken, "Bearer "))
 	}
-	return c.Cookies(os.Getenv("CSRF_COOKIE_NAME"))
+	return ""
 }
 
 func AuthMiddleware(c *fiber.Ctx) error {
@@ -37,8 +38,14 @@ func AuthMiddleware(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Authorization token required"})
 	}
 
-	hydraAdminURL := "http://senior-citizen-backend-hydra-1:4445/admin"
-	resp, err := http.PostForm(hydraAdminURL+"/oauth2/introspect", url.Values{
+	cfg := config.Get()
+	if cfg.HydraAdminURL == "" || cfg.KratosAdminURL == "" {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "missing auth service configuration"})
+	}
+
+	hydraAdminURL := strings.TrimSuffix(cfg.HydraAdminURL, "/")
+	introspectURL := hydraAdminURL + "/admin/oauth2/introspect"
+	resp, err := http.PostForm(introspectURL, url.Values{
 		"token": {tokenString},
 	})
 	if err != nil {
@@ -58,10 +65,10 @@ func AuthMiddleware(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to decode introspection response", "details": err.Error()})
 	}
 
-	if !introspection.Active || introspection.Exp < time.Now().Unix() {
+	if !introspection.Active || introspection.Exp < time.Now().Unix() || introspection.Sub == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Inactive or expired token"})
 	}
-	kratosAdminURL := "http://senior-citizen-backend-kratos-1:4434"
+	kratosAdminURL := strings.TrimSuffix(cfg.KratosAdminURL, "/")
 	kratosResp, err := http.Get(fmt.Sprintf("%s/admin/identities/%s", kratosAdminURL, introspection.Sub))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch user info from Kratos",
@@ -86,10 +93,13 @@ func AuthMiddleware(c *fiber.Ctx) error {
 	}
 
 	email, _ := kratosIdentity.Traits["email"].(string)
+	if strings.TrimSpace(email) == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "missing email in identity traits"})
+	}
 
 	userID, err := controllers.GetOrCreateUser(email)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to check admin status"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to ensure user exists"})
 	}
 
 	claims := fiber.Map{

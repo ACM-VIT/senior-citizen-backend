@@ -11,3 +11,14 @@ func CalculatePagination(page, pageSize int, total int64) (offset int, totalPage
 	totalPages = int((total + int64(pageSize) - 1) / int64(pageSize))
 	return
 }
+
+func NormalizePagination(page, pageSize int) (normalizedPage int, normalizedPageSize int, offset int) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10
+	}
+	offset = (page - 1) * pageSize
+	return page, pageSize, offset
+}

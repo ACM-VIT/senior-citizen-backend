@@ -17,13 +17,16 @@ func GetMembers(c *fiber.Ctx) error {
 	}
 
 	query := database.DB.Model(&models.Membership{})
+	countQuery := database.DB.Model(&models.Membership{})
 
 	if body.Role != "" {
 		query = query.Where("role = ?", body.Role)
+		countQuery = countQuery.Where("role = ?", body.Role)
 	}
 
 	if body.Position != "" {
 		query = query.Where("position = ?", body.Position)
+		countQuery = countQuery.Where("position = ?", body.Position)
 	}
 
 	if body.Page == 0 || body.Page < 1 {
@@ -37,7 +40,7 @@ func GetMembers(c *fiber.Ctx) error {
 	query = query.Offset(offset).Limit(body.PageSize)
 
 	var memberships []models.Membership
-	if err := query.Preload("User").Preload("Tenure").Find(&memberships).Error; err != nil {
+	if err := query.Preload("User.Profile").Preload("Tenure").Find(&memberships).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Unable to fetch membership records.")
 	}
 
@@ -46,7 +49,7 @@ func GetMembers(c *fiber.Ctx) error {
 	}
 
 	var totalCount int64
-	if err := database.DB.Model(&models.Membership{}).Count(&totalCount).Error; err != nil {
+	if err := countQuery.Count(&totalCount).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to count total Membership records. Please try again later.")
 	}
 
