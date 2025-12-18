@@ -16,6 +16,7 @@ type Config struct {
 	HydraAdminURL                  string
 	KratosAdminURL                 string
 	KratosPublicURL                string
+	KratosBrowserURL               string
 	KratosUIURL                    string
 	PublicURL                      string
 	HydraIntrospectionClientID     string
@@ -34,7 +35,8 @@ func Load() (Config, error) {
 		HydraAdminURL:                  strings.TrimSpace(getEnv("HYDRA_ADMIN_URL", "http://127.0.0.1:4445")),
 		KratosAdminURL:                 strings.TrimSpace(getEnv("KRATOS_ADMIN_URL", "http://127.0.0.1:4434")),
 		KratosPublicURL:                strings.TrimSpace(getEnv("KRATOS_PUBLIC_URL", "http://127.0.0.1:4433")),
-		KratosUIURL:                    strings.TrimSpace(getEnv("KRATOS_UI_URL", "http://127.0.0.1:4455")),
+		KratosBrowserURL:               strings.TrimSpace(getEnv("KRATOS_BROWSER_URL", "http://127.0.0.1:4433")),
+		KratosUIURL:                    strings.TrimSpace(getEnv("KRATOS_UI_URL", "http://127.0.0.1:3000/ui")),
 		PublicURL:                      strings.TrimSpace(getEnv("PUBLIC_URL", "http://127.0.0.1:3000")),
 		HydraIntrospectionClientID:     strings.TrimSpace(getEnv("HYDRA_INTROSPECTION_CLIENT_ID", "")),
 		HydraIntrospectionClientSecret: strings.TrimSpace(getEnv("HYDRA_INTROSPECTION_CLIENT_SECRET", "")),

@@ -2,8 +2,8 @@
 
 Go API service for the senior-citizen platform. It uses:
 
-- Ory Hydra for OAuth2/OIDC
-- Ory Kratos for identity and self-service flows
+- Hydra for OAuth2/OIDC
+- Kratos for identity and self-service flows
 - CockroachDB for application data
 - Fiber + GORM for the API
 
@@ -32,7 +32,8 @@ Key env vars (see `.env.example`):
 - `HYDRA_INTROSPECTION_CLIENT_ID` / `HYDRA_INTROSPECTION_CLIENT_SECRET` - optional client creds for token introspection.
 - `KRATOS_ADMIN_URL` - Kratos admin API URL (internal).
 - `KRATOS_PUBLIC_URL` - Kratos public URL (internal).
-- `KRATOS_UI_URL` - Kratos UI URL (browser-facing).
+- `KRATOS_BROWSER_URL` - Kratos public URL for the browser.
+- `KRATOS_UI_URL` - Auth UI base URL (browser-facing).
 
 Cockroach runs in secure mode in Docker; certs are auto-generated and mounted at `/certs`. The default `DATABASE_URL` in `.env.example` uses those certs. If you run the API outside Docker, you’ll need to export the certs and update the path accordingly.
 
@@ -43,7 +44,7 @@ Default ports:
 - Hydra admin: `http://127.0.0.1:4445`
 - Kratos public: `http://127.0.0.1:4433`
 - Kratos admin: `http://127.0.0.1:4434`
-- Kratos UI: `http://127.0.0.1:4455`
+- Auth UI: `http://127.0.0.1:3000/ui`
 
 If you run the API locally outside Docker, set `HYDRA_ADMIN_URL` and `KRATOS_ADMIN_URL` to `http://127.0.0.1:4445` and `http://127.0.0.1:4434`.
 For production or custom domains, update `config/hydra.yml` and `config/kratos.yml` URLs to match your public auth domain.
@@ -58,7 +59,7 @@ Hydra login is handled by the backend at:
 GET /api/v1/auth/login?login_challenge=<challenge>
 ```
 
-The login handler checks for an existing Kratos session and redirects to the Kratos UI if needed, then accepts the Hydra login request.
+The login handler checks for an existing Kratos session and redirects to the auth UI if needed, then accepts the Hydra login request.
 
 ### Register a client
 
@@ -113,7 +114,7 @@ Use Hydra as your OIDC provider in each app. Users will have a single IdP sessio
 For cross-subdomain SSO:
 
 - Set Hydra and Kratos public URLs to `https://auth.example.com`.
-- Set `PUBLIC_URL=https://auth.example.com` and `KRATOS_UI_URL=https://auth.example.com` (or your UI domain).
+- Set `PUBLIC_URL=https://auth.example.com` and `KRATOS_UI_URL=https://auth.example.com/ui` (or your UI domain).
 - Configure Kratos cookie domain to `.example.com` (see Kratos config docs).
 - Register each app redirect URI in Hydra.
 
