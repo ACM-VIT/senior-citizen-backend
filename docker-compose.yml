@@ -122,11 +122,11 @@ services:
       - >
         set -e;
         for i in $(seq 1 30); do
-          cockroach init --certs-dir=/certs --host=cockroach:26257 && break || true;
-          sleep 2;
-        done;
-        for i in $(seq 1 30); do
-          cockroach sql --certs-dir=/certs --host=cockroach:26257 -e 'SELECT 1' && break;
+          if cockroach sql --certs-dir=/certs --host=cockroach:26257 -e 'SELECT 1' 2>/dev/null; then
+            echo "Cluster is already initialized and ready";
+            break;
+          fi;
+          cockroach init --certs-dir=/certs --host=cockroach:26257 2>&1 | grep -v "already been initialized" || true;
           sleep 2;
         done;
         cockroach sql --certs-dir=/certs --host=cockroach:26257 -e 'CREATE DATABASE IF NOT EXISTS senior_citizen;'
