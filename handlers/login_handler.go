@@ -35,7 +35,7 @@ func LoginHandler(c *fiber.Ctx) error {
 	}
 
 	cfg := config.Get()
-	if cfg.HydraAdminURL == "" || cfg.KratosPublicURL == "" || cfg.KratosUIURL == "" || cfg.PublicURL == "" {
+	if cfg.HydraAdminURL == "" || cfg.KratosPublicURL == "" || cfg.KratosUIURL == "" || cfg.AuthPublicURL == "" {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "missing auth service configuration"})
 	}
 
@@ -79,7 +79,7 @@ func LoginHandler(c *fiber.Ctx) error {
 	defer whoamiResp.Body.Close()
 
 	if whoamiResp.StatusCode == http.StatusUnauthorized || whoamiResp.StatusCode == http.StatusForbidden {
-		returnTo := strings.TrimSuffix(cfg.PublicURL, "/") + "/api/v1/auth/login?login_challenge=" + url.QueryEscape(challenge)
+		returnTo := strings.TrimSuffix(cfg.AuthPublicURL, "/") + "/api/v1/auth/login?login_challenge=" + url.QueryEscape(challenge)
 		loginURL := strings.TrimSuffix(cfg.KratosUIURL, "/") + "/login?return_to=" + url.QueryEscape(returnTo)
 		return c.Redirect(loginURL, http.StatusFound)
 	}

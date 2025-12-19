@@ -1,12 +1,12 @@
 serve:
   cookies:
     same_site_mode: Lax
-    domain: .acmvit.in
+    domain: oauth.acmvit.in
 urls:
   self:
     issuer: https://oauth.acmvit.in
-  consent: https://sso.acmvit.in/api/v1/authconsent
-  login: https://sso.acmvit.in/api/v1/auth/login
+  consent: https://auth.acmvit.in/api/v1/authconsent
+  login: https://auth.acmvit.in/api/v1/auth/login
   logout: https://sso.acmvit.in/ui/logout
   error: https://sso.acmvit.in/ui/error
   identity_provider:

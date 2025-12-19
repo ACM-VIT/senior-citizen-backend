@@ -29,7 +29,7 @@ serve:
 
 session:
   cookie:
-    domain: .acmvit.in
+    domain: auth.acmvit.in
     same_site: Lax
 
 selfservice:
