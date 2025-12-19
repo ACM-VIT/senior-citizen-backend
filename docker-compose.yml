@@ -9,6 +9,8 @@ services:
     environment:
       - DSN=${KRATOS_DSN}
       - LOG_LEVEL=${KRATOS_LOG_LEVEL}
+      - SECRETS_COOKIE=${KRATOS_COOKIE_SECRET}
+      - SECRETS_CIPHER=${KRATOS_CIPHER_SECRET}
     command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
     volumes:
       - ./config:/etc/config/kratos
@@ -20,7 +22,7 @@ services:
     env_file:
       - .env
     environment:
-      - DSN=postgres://kratos:secret@kratos-postgres:5432/kratos?sslmode=disable
+      - DSN=${KRATOS_DSN}
     command: migrate sql -e --yes -c /etc/config/kratos/kratos.yml
     volumes:
       - ./config:/etc/config/kratos
@@ -40,6 +42,8 @@ services:
       - .env
     environment:
       - DSN=${HYDRA_DSN}
+      - SECRETS_SYSTEM=${HYDRA_SYSTEM_SECRET}
+      - OIDC_SUBJECT_IDENTIFIERS_PAIRWISE_SALT=${HYDRA_OIDC_SALT}
     command: serve -c /etc/config/hydra/hydra.yml all --dev
     volumes:
       - ./config:/etc/config/hydra
@@ -53,9 +57,11 @@ services:
 
   hydra-migrate:
     image: oryd/hydra:v2.2.0
-    command: migrate sql -e --yes
+    env_file:
+      - .env
     environment:
       - DSN=${HYDRA_DSN}
+    command: migrate sql -e --yes
     networks:
       - intranet
     depends_on:
@@ -139,16 +145,19 @@ services:
     env_file:
       - .env
     environment:
-      - DATABASE_URL=${DATABASE_URL:-postgresql://root@cockroach:26257/senior_citizen?sslmode=verify-full&sslrootcert=/certs/ca.crt&sslcert=/certs/client.root.crt&sslkey=/certs/client.root.key}
-      - PUBLIC_URL=${PUBLIC_URL:-http://127.0.0.1:3000}
-      - HYDRA_ADMIN_URL=${HYDRA_ADMIN_URL:-http://hydra:4445}
-      - HYDRA_INTROSPECTION_CLIENT_ID=${HYDRA_INTROSPECTION_CLIENT_ID:-}
-      - HYDRA_INTROSPECTION_CLIENT_SECRET=${HYDRA_INTROSPECTION_CLIENT_SECRET:-}
-      - KRATOS_ADMIN_URL=${KRATOS_ADMIN_URL:-http://kratos:4434}
-      - KRATOS_PUBLIC_URL=${KRATOS_PUBLIC_URL:-http://kratos:4433}
-      - KRATOS_BROWSER_URL=${KRATOS_BROWSER_URL:-http://127.0.0.1:4433}
-      - KRATOS_UI_URL=${KRATOS_UI_URL:-http://127.0.0.1:3000/ui}
-      - SHOULD_MIGRATE=${SHOULD_MIGRATE:-true}
+      - DATABASE_URL=${DATABASE_URL}
+      - PUBLIC_URL=${PUBLIC_URL}
+      - HYDRA_ADMIN_URL=${HYDRA_ADMIN_URL}
+      - HYDRA_INTROSPECTION_CLIENT_ID=${HYDRA_INTROSPECTION_CLIENT_ID}
+      - HYDRA_INTROSPECTION_CLIENT_SECRET=${HYDRA_INTROSPECTION_CLIENT_SECRET}
+      - KRATOS_ADMIN_URL=${KRATOS_ADMIN_URL}
+      - KRATOS_PUBLIC_URL=${KRATOS_PUBLIC_URL}
+      - KRATOS_BROWSER_URL=${KRATOS_BROWSER_URL}
+      - KRATOS_UI_URL=${KRATOS_UI_URL}
+      - SHOULD_MIGRATE=${SHOULD_MIGRATE}
+      - COOKIE_SECRET=${COOKIE_SECRET}
+      - CSRF_COOKIE_NAME=${CSRF_COOKIE_NAME}
+      - CSRF_COOKIE_SECRET=${CSRF_COOKIE_SECRET}
     networks:
       - intranet
     volumes:
@@ -161,9 +170,11 @@ services:
 
   kratos-postgres:
     image: postgres:15
+    env_file:
+      - .env
     environment:
       POSTGRES_USER: kratos
-      POSTGRES_PASSWORD: secret
+      POSTGRES_PASSWORD: ${KRATOS_DB_PASSWORD}
       POSTGRES_DB: kratos
     ports:
       - "5432:5432"
@@ -174,9 +185,11 @@ services:
 
   hydra-postgres:
     image: postgres:15
+    env_file:
+      - .env
     environment:
       POSTGRES_USER: hydra
-      POSTGRES_PASSWORD: secret
+      POSTGRES_PASSWORD: ${HYDRA_DB_PASSWORD}
       POSTGRES_DB: hydra
     ports:
       - "5433:5432"

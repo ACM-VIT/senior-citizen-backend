@@ -2,12 +2,14 @@ version: v1.1.0
 
 serve:
   public:
-    base_url: http://127.0.0.1:4433
+    base_url: https://auth.acmvit.in
     cors:
       enabled: true
       allowed_origins:
-        - http://127.0.0.1:3000
-        - http://localhost:3000
+        - https://hub.acmvit.in
+        - https://auth.acmvit.in
+        - https://oauth.acmvit.in
+        - https://*.acmvit.in
       allowed_methods:
         - GET
         - POST
@@ -23,23 +25,27 @@ serve:
         - Content-Type
       allow_credentials: true
   admin:
-    base_url: http://127.0.0.1:4434
+    base_url: http://kratos:4434
+
+session:
+  cookie:
+    domain: .acmvit.in
+    same_site: Lax
 
 selfservice:
-  default_browser_return_url: http://127.0.0.1:3000/ui/login
+  default_browser_return_url: https://hub.acmvit.in/ui/login
   allowed_return_urls:
-    - http://127.0.0.1:3000/ui
-    - http://127.0.0.1:3000/ui/login
-    - http://127.0.0.1:3000/ui/registration
-    - http://127.0.0.1:3000/ui/settings
-    - http://127.0.0.1:3000/ui/recovery
-    - http://127.0.0.1:3000/ui/verification
-    - http://127.0.0.1:3000/ui/error
-    - http://localhost:3000/ui
-    - http://localhost:3000/ui/login
-    - http://127.0.0.1:3000/api/v1/auth/login
-    - http://127.0.0.1:4433/self-service
-    - http://127.0.0.1:4444/oauth2/auth
+    - https://hub.acmvit.in/ui
+    - https://hub.acmvit.in/ui/login
+    - https://hub.acmvit.in/ui/registration
+    - https://hub.acmvit.in/ui/settings
+    - https://hub.acmvit.in/ui/recovery
+    - https://hub.acmvit.in/ui/verification
+    - https://hub.acmvit.in/ui/error
+    - https://hub.acmvit.in/api/v1/auth/login
+    - https://auth.acmvit.in/self-service
+    - https://oauth.acmvit.in/oauth2/auth
+    - https://*.acmvit.in
 
   methods:
     password:
@@ -51,32 +57,32 @@ selfservice:
 
   flows:
     error:
-      ui_url: http://127.0.0.1:3000/ui/error
+      ui_url: https://hub.acmvit.in/ui/error
 
     settings:
-      ui_url: http://127.0.0.1:3000/ui/settings
+      ui_url: https://hub.acmvit.in/ui/settings
       privileged_session_max_age: 15m
       required_aal: highest_available
 
     logout:
       after:
-        default_browser_return_url: http://127.0.0.1:3000/ui/login
+        default_browser_return_url: https://hub.acmvit.in/ui/login
 
     login:
-      ui_url: http://127.0.0.1:3000/ui/login
+      ui_url: https://hub.acmvit.in/ui/login
 
     registration:
-      ui_url: http://127.0.0.1:3000/ui/registration
+      ui_url: https://hub.acmvit.in/ui/registration
       after:
         password:
           hooks:
             - hook: session
 
     recovery:
-      ui_url: http://127.0.0.1:3000/ui/recovery
+      ui_url: https://hub.acmvit.in/ui/recovery
 
     verification:
-      ui_url: http://127.0.0.1:3000/ui/verification
+      ui_url: https://hub.acmvit.in/ui/verification
 
 log:
   format: text
@@ -84,9 +90,9 @@ log:
 
 secrets:
   cookie:
-    - PLEASE-CHANGE-ME-I-AM-VERY-INSECURE
+    - ${KRATOS_COOKIE_SECRET}
   cipher:
-    - 32-LONG-SECRET-NOT-SECURE-AT-ALL
+    - ${KRATOS_CIPHER_SECRET}
 
 identity:
   default_schema_id: default

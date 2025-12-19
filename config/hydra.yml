@@ -1,20 +1,21 @@
 serve:
   cookies:
     same_site_mode: Lax
+    domain: .acmvit.in
 urls:
   self:
-    issuer: http://127.0.0.1:4444
-  consent: http://127.0.0.1:3000/api/v1/authconsent
-  login: http://127.0.0.1:3000/api/v1/auth/login
-  logout: http://127.0.0.1:3000/ui/logout
-  error: http://127.0.0.1:3000/ui/error
+    issuer: https://oauth.acmvit.in
+  consent: https://hub.acmvit.in/api/v1/authconsent
+  login: https://hub.acmvit.in/api/v1/auth/login
+  logout: https://hub.acmvit.in/ui/logout
+  error: https://hub.acmvit.in/ui/error
   identity_provider:
-    publicUrl: http://127.0.0.1:4433
-    url: http://127.0.0.1:4434
+    publicUrl: https://auth.acmvit.in
+    url: http://kratos:4434
 
 secrets:
   system:
-    - youReallyNeedToChangeThis
+    - ${HYDRA_SYSTEM_SECRET}
 
 oidc:
   subject_identifiers:
@@ -22,7 +23,7 @@ oidc:
       - pairwise
       - public
     pairwise:
-      salt: youReallyNeedToChangeThis
+      salt: ${HYDRA_OIDC_SALT}
 
 log:
   leak_sensitive_values: true
