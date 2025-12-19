@@ -95,10 +95,10 @@ services:
         while [ ! -f /certs/ca.crt ]; do
           sleep 1;
         done;
-        cockroach start --certs-dir=/certs --store=/cockroach/cockroach-data --listen-addr=0.0.0.0:26257 --advertise-addr=cockroach:26257 --http-addr=0.0.0.0:8080 --join=cockroach:26257
+        cockroach start --certs-dir=/certs --store=/cockroach/cockroach-data --listen-addr=0.0.0.0:26257 --advertise-addr=cockroach:26257 --http-addr=0.0.0.0:8085 --join=cockroach:26257
     ports:
       - "26257:26257"
-      - "8080:8080"
+      - "8085:8085"
     networks:
       - intranet
     volumes:
