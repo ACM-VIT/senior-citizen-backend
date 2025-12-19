@@ -30,7 +30,7 @@ SHOULD_MIGRATE=true
 
 # Backend
 PORT=3000
-PUBLIC_URL=https://hub.acmvit.in
+PUBLIC_URL=https://sso.acmvit.in
 
 # Hydra
 HYDRA_ADMIN_URL=http://hydra:4445
@@ -45,7 +45,7 @@ HYDRA_OIDC_SALT=${HYDRA_OIDC_SALT}
 KRATOS_ADMIN_URL=http://kratos:4434
 KRATOS_PUBLIC_URL=http://kratos:4433
 KRATOS_BROWSER_URL=https://auth.acmvit.in
-KRATOS_UI_URL=https://hub.acmvit.in/ui
+KRATOS_UI_URL=https://sso.acmvit.in/ui
 KRATOS_DSN=postgres://kratos:${KRATOS_DB_PASS}@kratos-postgres:5432/kratos?sslmode=disable
 KRATOS_DB_PASSWORD=${KRATOS_DB_PASS}
 KRATOS_LOG_LEVEL=info
