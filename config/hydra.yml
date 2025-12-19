@@ -5,10 +5,10 @@ serve:
 urls:
   self:
     issuer: https://oauth.acmvit.in
-  consent: https://hub.acmvit.in/api/v1/authconsent
-  login: https://hub.acmvit.in/api/v1/auth/login
-  logout: https://hub.acmvit.in/ui/logout
-  error: https://hub.acmvit.in/ui/error
+  consent: https://sso.acmvit.in/api/v1/authconsent
+  login: https://sso.acmvit.in/api/v1/auth/login
+  logout: https://sso.acmvit.in/ui/logout
+  error: https://sso.acmvit.in/ui/error
   identity_provider:
     publicUrl: https://auth.acmvit.in
     url: http://kratos:4434
