@@ -11,7 +11,7 @@ services:
       - LOG_LEVEL=${KRATOS_LOG_LEVEL}
       - SECRETS_COOKIE=${KRATOS_COOKIE_SECRET}
       - SECRETS_CIPHER=${KRATOS_CIPHER_SECRET}
-    command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
+    command: serve -c /etc/config/kratos/kratos.yml
     volumes:
       - ./config:/etc/config/kratos
     networks:
@@ -44,7 +44,7 @@ services:
       - DSN=${HYDRA_DSN}
       - SECRETS_SYSTEM=${HYDRA_SYSTEM_SECRET}
       - OIDC_SUBJECT_IDENTIFIERS_PAIRWISE_SALT=${HYDRA_OIDC_SALT}
-    command: serve -c /etc/config/hydra/hydra.yml all --dev
+    command: serve -c /etc/config/hydra/hydra.yml all
     volumes:
       - ./config:/etc/config/hydra
     networks:
