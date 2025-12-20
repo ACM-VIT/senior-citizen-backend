@@ -12,6 +12,7 @@
 
   const flowType = path.split("/").pop() || "login";
   const params = new URLSearchParams(window.location.search);
+  storeReturnTo(params.get("return_to"));
 
   const views = {
     login: {
@@ -174,10 +175,17 @@
         url.searchParams.set(key, params.get(key));
       }
     });
+    if (!url.searchParams.has("return_to") && params.has("flow")) {
+      const stored = getStoredReturnTo();
+      if (stored) {
+        url.searchParams.set("return_to", stored);
+      }
+    }
     return url.pathname + url.search;
   }
 
   function startFlow(flowType, params, kratosPublicUrl) {
+    storeReturnTo(params.get("return_to"));
     const url = new URL(`${kratosPublicUrl}/self-service/${flowType}/browser`);
     params.forEach((value, key) => {
       if (key !== "flow") {
@@ -208,7 +216,11 @@
       err.payload = payload;
       throw err;
     }
-    return resp.json();
+    const flow = await resp.json();
+    if (flow && flow.return_to) {
+      storeReturnTo(flow.return_to);
+    }
+    return flow;
   }
 
   function shouldRestartFlow(err, flowType, flowId) {
@@ -330,7 +342,35 @@
   }
 
   function resolveReturnTo(params) {
-    return params.get("return_to") || publicUrl;
+    if (params.has("return_to")) {
+      return params.get("return_to");
+    }
+    if (params.has("flow")) {
+      const stored = getStoredReturnTo();
+      if (stored) {
+        return stored;
+      }
+    }
+    return publicUrl;
+  }
+
+  function storeReturnTo(value) {
+    if (!value) {
+      return;
+    }
+    try {
+      window.sessionStorage.setItem("auth:return_to", value);
+    } catch (error) {
+      return;
+    }
+  }
+
+  function getStoredReturnTo() {
+    try {
+      return window.sessionStorage.getItem("auth:return_to") || "";
+    } catch (error) {
+      return "";
+    }
   }
 
   async function handleError(params) {
