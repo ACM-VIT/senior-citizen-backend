@@ -26,5 +26,5 @@ oidc:
       salt: ${HYDRA_OIDC_SALT}
 
 log:
-  leak_sensitive_values: true
-  level: debug
+  leak_sensitive_values: false
+  level: info
