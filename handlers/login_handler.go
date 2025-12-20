@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"acm-portal/internal/config"
+	"acm-portal/internal/loginstate"
 	"acm-portal/internal/ory"
 
 	"github.com/gofiber/fiber/v2"
@@ -31,7 +32,15 @@ type kratosWhoamiResponse struct {
 func LoginHandler(c *fiber.Ctx) error {
 	challenge := strings.TrimSpace(c.Query("login_challenge"))
 	if challenge == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "missing login_challenge"})
+		token := strings.TrimSpace(c.Query("lcid"))
+		if token == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "missing login_challenge"})
+		}
+		resolved, ok := loginstate.ConsumeChallenge(token)
+		if !ok {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid or expired login challenge"})
+		}
+		challenge = resolved
 	}
 
 	cfg := config.Get()
@@ -79,7 +88,11 @@ func LoginHandler(c *fiber.Ctx) error {
 	defer whoamiResp.Body.Close()
 
 	if whoamiResp.StatusCode == http.StatusUnauthorized || whoamiResp.StatusCode == http.StatusForbidden {
-		returnTo := strings.TrimSuffix(cfg.AuthPublicURL, "/") + "/api/v1/auth/login?login_challenge=" + url.QueryEscape(challenge)
+		token, err := loginstate.SaveChallenge(challenge)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to create login session"})
+		}
+		returnTo := strings.TrimSuffix(cfg.AuthPublicURL, "/") + "/api/v1/auth/login?lcid=" + url.QueryEscape(token)
 		loginURL := strings.TrimSuffix(cfg.KratosUIURL, "/") + "/login?return_to=" + url.QueryEscape(returnTo)
 		return c.Redirect(loginURL, http.StatusFound)
 	}
