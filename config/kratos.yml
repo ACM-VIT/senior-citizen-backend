@@ -31,7 +31,6 @@ session:
   cookie:
     domain: sso.acmvit.in
     same_site: Lax
-    secure: true
 
 selfservice:
   default_browser_return_url: https://sso.acmvit.in/ui/login
