@@ -6,6 +6,7 @@ Go API service for the senior-citizen platform. It uses:
 - Kratos for identity and self-service flows
 - CockroachDB for application data
 - Fiber + GORM for the API
+- GIN indexes and cockroachdb changefeeds for fuzzy search
 
 ## Local development (Docker Compose)
 
@@ -80,13 +81,13 @@ curl -X POST http://127.0.0.1:4445/admin/clients \
 
 ### Authorization flow
 
-1) Authorization request (browser):
+1. Authorization request (browser):
 
 ```http
 GET http://127.0.0.1:4444/oauth2/auth?client_id=reverse-coding&response_type=code&scope=openid%20email%20profile%20offline&redirect_uri=http://localhost:3000/callback&state=<RANDOM_STATE>
 ```
 
-2) Token exchange (server-side client):
+2. Token exchange (server-side client):
 
 ```http
 POST http://127.0.0.1:4444/oauth2/token
@@ -205,3 +206,16 @@ Non-admin users can only view/update/delete their own records. Admins can act on
 
 - `GET /api/v1/email-preferences`
 - `PUT /api/v1/email-preferences`
+
+### Fuzzy Search
+
+Since pg_trgm extension is not supported in CockroachDB, we implement fuzzy search using trigram generation, GIN indexes, and changefeeds.
+
+1. Run the docker-compose file with `SHOULD_MIGRATE=true` to create the GIN indexes.
+2. Parallely run go run ./cdc to start the changefeed listener.
+3. Forward port 8081 to expose the changefeed listener.
+4. Create a changefeed for the table you want to fuzzy search. Currently enabled on profiles table on name and company fields.
+   `CREATE CHANGEFEED FOR TABLE profiles INTO 'webhook-https://cd6b20fcb1eb.ngrok-free.app/cdc' WITH OPTIONS (envelope = 'wrapped',format = 'json', initial_scan, updated)`
+5. The above can be configured either in cockroachdb sql shell or with the help of cockroachdb cli.
+6. The webhook is triggered whenver a row is inserted / updated in the table.
+7. To search for a profile, send a POST request to `/api/v1/search/member`. Before you search ensure that the membership table is populated.

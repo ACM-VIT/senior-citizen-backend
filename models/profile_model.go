@@ -1,5 +1,7 @@
 package models
 
+import "github.com/lib/pq"
+
 type Profile struct {
 	Base
 	UserID            string `gorm:"uniqueIndex" json:"user_id"`
@@ -16,6 +18,9 @@ type Profile struct {
 	JobTitle          string `gorm:"type:varchar(100)" json:"job_title,omitempty"`
 	Company           string `gorm:"type:varchar(100)" json:"company,omitempty"`
 	Website           string `gorm:"type:varchar(255)" json:"website,omitempty"`
+	// Columns to store Trigram indexes, used for search
+	NameGrams    pq.StringArray `gorm:"type:text[]" json:"-"`
+	CompanyGrams pq.StringArray `gorm:"type:text[]" json:"-"`
 }
 
 type Gender string

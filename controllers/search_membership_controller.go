@@ -2,10 +2,11 @@ package controllers
 
 import (
 	"acm-portal/database"
+	"acm-portal/helpers"
 	"acm-portal/models"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/lib/pq"
 )
 
 type MembershipSearchRequest struct {
@@ -18,56 +19,90 @@ type MembershipSearchRequest struct {
 func SearchMembership(c *fiber.Ctx) error {
 	var body MembershipSearchRequest
 	if err := c.BodyParser(&body); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
 	}
 
-	if body.Query == "" && body.TenureID == "" && body.Role == "" && body.Position == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "At least one query/filter is required",
-		})
-	}
-
-	var memberships []models.Membership
 	db := database.DB
-
-	dbQuery := db.Model(&models.Membership{}).
-		Preload("User.Profile").
-		Preload("Tenure").
-		Joins("JOIN users u ON u.id = memberships.user_id").
-		Joins("JOIN profiles p ON p.user_id = u.id")
+	var memberships []models.Membership
 
 	if body.Query != "" {
-		q := strings.ToLower(body.Query)
-		dbQuery = dbQuery.Where(`
-			LOWER(p.name) ILIKE ? OR
-			LOWER(p.phone) ILIKE ? OR
-			LOWER(p.gender) ILIKE ? OR
-			LOWER(p.job_title) ILIKE ? OR
-			LOWER(p.company) ILIKE ? OR
-			LOWER(memberships.role) ILIKE ? OR
-			LOWER(memberships.position) ILIKE ?`,
-			"%"+q+"%", "%"+q+"%", "%"+q+"%",
-			"%"+q+"%", "%"+q+"%", "%"+q+"%", "%"+q+"%",
+		qGrams := helpers.Trigrams(body.Query)
+
+		var membershipIDs []string
+
+		rawSQL := `
+		WITH ranked_profiles AS (
+	SELECT
+		p.id,
+		p.user_id,
+		cardinality(
+		ARRAY(
+			SELECT unnest(COALESCE(p.name_grams, '{}'))
+			INTERSECT
+			SELECT unnest(?::TEXT[])
 		)
+		) +
+		cardinality(
+		ARRAY(
+			SELECT unnest(COALESCE(p.company_grams, '{}'))
+			INTERSECT
+			SELECT unnest(?::TEXT[])
+		)
+		) AS score
+	FROM profiles p
+	WHERE
+		COALESCE(p.name_grams, '{}') && ?::TEXT[]
+		OR COALESCE(p.company_grams, '{}') && ?::TEXT[]
+	)
+	SELECT m.id
+	FROM ranked_profiles rp
+	JOIN memberships m ON m.user_id = rp.user_id
+	ORDER BY rp.score DESC
+	LIMIT 50;
+		`
+
+		if err := db.Raw(
+			rawSQL,
+			pq.Array(qGrams),
+			pq.Array(qGrams),
+			pq.Array(qGrams),
+			pq.Array(qGrams),
+		).Scan(&membershipIDs).Error; err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		}
+
+		if len(membershipIDs) == 0 {
+			return c.JSON([]models.Membership{})
+		}
+
+		if err := db.
+			Where("id IN ?", membershipIDs).
+			Preload("User.Profile").
+			Preload("Tenure").
+			Find(&memberships).Error; err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		}
+
+		return c.JSON(memberships)
 	}
 
-	// Filters
+	query := db.
+		Model(&models.Membership{}).
+		Preload("User.Profile").
+		Preload("Tenure")
+
 	if body.TenureID != "" {
-		dbQuery = dbQuery.Where("memberships.tenure_id = ?", body.TenureID)
+		query = query.Where("tenure_id = ?", body.TenureID)
 	}
 	if body.Role != "" {
-		dbQuery = dbQuery.Where("memberships.role = ?", body.Role)
+		query = query.Where("role = ?", body.Role)
 	}
 	if body.Position != "" {
-		dbQuery = dbQuery.Where("memberships.position ILIKE ?", "%"+body.Position+"%")
+		query = query.Where("position = ?", body.Position)
 	}
 
-	if err := dbQuery.Find(&memberships).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+	if err := query.Find(&memberships).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	return c.JSON(memberships)
