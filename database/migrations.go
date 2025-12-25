@@ -29,9 +29,23 @@ func RunMigrations(db *gorm.DB) {
 			return
 		}
 		log.Fatal("Failed to run migrations: ", err)
-	} else {
-		log.Println("Migrations completed successfully.")
 	}
+
+	if err := createFuzzySearchIndexes(db); err != nil {
+		log.Fatal("Failed to create GIN indexes: ", err)
+	}
+
+	log.Println("Migrations completed successfully.")
+}
+
+func createFuzzySearchIndexes(db *gorm.DB) error {
+	return db.Exec(`
+		CREATE INDEX IF NOT EXISTS idx_profiles_name_grams
+		ON profiles USING GIN (name_grams);
+
+		CREATE INDEX IF NOT EXISTS idx_profiles_company_grams
+		ON profiles USING GIN (company_grams);
+	`).Error
 }
 
 func isIgnorableMigrationError(err error) bool {
