@@ -22,3 +22,15 @@ func GetCurrentRole(userID string) (models.Role, error) {
 	}
 	return models.Role(membership.Tenure.ID), nil
 }
+
+func ResolvePermissions(role models.Role) []models.PermissionCode {
+	return models.DefaultRolePermissionCodes(role)
+}
+
+func HasPermission(userId string, permission models.PermissionCode) (bool, error) {
+	role, err := GetCurrentRole(userId)
+	if err != nil {
+		return false, err
+	}
+	return models.HasPermission(role, permission), nil
+}
