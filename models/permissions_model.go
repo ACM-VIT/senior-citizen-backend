@@ -13,6 +13,15 @@ const (
 	ExamcookerApprove     PermissionCode = "examcooker.approve_exam"
 	ExamcookerAddMember   PermissionCode = "examcooker.add_member"
 	ExamcookerRemoveAdmin PermissionCode = "examcooker.remove_admin"
+
+	AddMember             PermissionCode = "add_member"
+	UpdateMemberAccess 	  PermissionCode = "update_member_access"
+	CreateAdminController PermissionCode = "create_admin_controller"
+	CreateUpdateProfile   PermissionCode = "create_update_profile"
+	EventUpdate           PermissionCode = "event_update"
+	EventCreate           PermissionCode = "event_create"
+	EventDelete           PermissionCode = "event_delete"
+	
 )
 
 type Permission struct {
